@@ -1,32 +1,112 @@
 ---
-title: "Species Distribution"
+title: "CaliBombus"
 output: html_document
 ---
-
-```{r}
-
+#Load Necessary Packages
+```{r, echo=FALSE}
 library(dplyr)
 library(ggplot2)
-
+library(stringr)
 ```
 
-
+#Load all data 
+##Filter out non bombus samples
+##Select relevant data columns
 ```{r}
 data<-read.csv("../CaliBombus/bumble_inventory.csv")
 head(data)
-dataSUM <- data %>% select("Site_Name", "Verified.Bee.species.ID") %>% filter(!Verified.Bee.species.ID %in% c("", "NA - Andrena?", "NA - Anthophorid", "NA - Anthophorid?", "NA - fly (bumble mimic)", "NA - nonBombus", "NA - Osmia?", "NA - robber fly", "NA - Xylocopa"))
-dataSUM
+dataALL <- data %>% filter(!Verified.Bee.species.ID %in% c("", "NA - Andrena?", "NA - Anthophorid", "NA - Anthophorid?", "NA - fly (bumble mimic)", "NA - nonBombus", "NA - Osmia?", "NA - robber fly", "NA - Xylocopa")) %>% select(Bee.Unique.ID, Date_comb, Date_reformat, Locality_reformat, Latitude, Longitude, Site_Grouping, Ecoregion, Elevation_ft, County_State_Country, State, Collector, Time_Collected, Floral.association..field.ID., Verified.Bee.species.ID, sex.caste)
+head(dataALL)
 
-speciesCOUNT<-dataSUM %>% group_by(Site_Name) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% group_by(Site_Name) %>% summarise(SpeciesRichness=sum(count))
-speciesCOUNT
-
-ggplot(speciesCOUNT, aes(x=Site_Name, y=SpeciesRichness)) +geom_bar(stat="identity")+ theme(axis.text.x=element_text(angle=90, size=5))
-
-speciesCOUNTsite<-dataSUM %>%group_by(Site_Name) %>% count(Verified.Bee.species.ID) 
-caliSITE<-speciesCOUNTsite %>% group_by(Site_Name) %>% mutate(totAbund=sum(n)) %>% filter(totAbund>=100)
-
-caliSITE
-ggplot(caliSITE, aes(fill=Verified.Bee.species.ID, y=n, x=Site_Name)) + 
-    geom_bar(position="stack", stat="identity") + theme(axis.text.x=element_text(angle=90, size=10))
 
 ```
+#Filter data by final sites (>20km apart)
+```{r}
+#Group species by site_grouping and date of collection (pooled sites that are less than >20 km apart) and make species richness column for each site and species abundance column 
+speciesCOUNT<-dataALL %>% group_by(Site_Grouping) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
+
+
+#Add Total Abundance column(total number of bombus/site)
+speciesCOUNT<-speciesCOUNT %>% mutate(TotalAbundance=sum(SpeciesAbundance))
+
+
+#Merge richness/abundance info with site characteristics by Site_Grouping
+#Use this data frame for sampling time specific questions
+dataTOTAL<-left_join(dataALL, speciesCOUNT, by=c("Site_Grouping", 
+                                               "Verified.Bee.species.ID"))
+head(dataTOTAL)
+
+
+```
+
+# Combine dates that are within 3 days of each other
+```{r}
+
+#Combine sampling times for sites that were collected within 3 days of each other 
+
+#Change date format so we can do math
+head(dataALL)
+dates<-str_remove(dataALL$Date_reformat, "-")
+dates<-str_remove(dates, "-")
+dataALL$Date<-as.Date(dates, "%d%b%Y")
+#Make column with number of days between sampling dates 
+dateRANGE <-dataALL %>% group_by(Site_Grouping) %>% mutate(range=(max(Date)-min(Date)))
+
+#Find all sites with less than three days to combine 
+dateRANGE %>% filter(range != 0 & range <= 3) %>% unique() %>% select(Site_Grouping, Date, range) %>% unique()
+
+## Changed dates for SC, MK, WM to earliest collection date to combine manually in excel as Date_comb
+```
+
+#Filter data by final sites (>20 km apart) and sampling time
+```{r}
+#Group species by site_grouping and date of collection (pooled sites that are less than >20 km apart) and make species richness column for each site and species abundance column 
+speciesCOUNT<-dataALL %>% group_by(Site_Grouping, Date_comb) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
+
+
+#Add Total Abundance column(total number of bombus/site)
+speciesCOUNT<-speciesCOUNT %>% mutate(TotalAbundance=sum(SpeciesAbundance))
+
+
+
+
+#Merge richness/abundance info with site characteristics by Site_Grouping
+#Use this data frame for sampling time specific questions
+dataTIME<-left_join(dataALL, speciesCOUNT, by=c("Site_Grouping", 
+                                               "Date_comb", "Verified.Bee.species.ID"))
+head(dataTIME)
+
+
+
+#How many sites have more than one sampling time and hoow many bees were collected? 
+plot<-dataTIME %>% filter(Site_Grouping != "misc") %>% select(Date_comb, Site_Grouping, TotalAbundance) %>% unique()
+
+ggplot(plot, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
+  geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
+
+
+```
+
+
+#Filter data by number collected / sampling time 
+```{r}
+#Filter based on having at least 110 individuals / site total 
+dataFILT110<-dataTOTAL %>% filter(TotalAbundance>=110)
+dataFILT110 %>% group_by(Site_Grouping)  %>% tally()
+print("There are 6 sites with at least 110 bees collected / site")
+dataFILT100<-dataTOTAL %>% filter(TotalAbundance>=100)
+dataFILT100 %>% group_by(Site_Grouping)%>% tally()
+print("There are 16 sites with at least 100 bees collected / site")
+head(dataTOTAL)
+#Filter based on each site having at least 105 individuals / sampling time 
+dataTIME105<-dataTIME %>% filter(TotalAbundance>=105)
+dataTIME105 %>% group_by(Site_Grouping) %>% tally()
+print("There are 10 sites with at least 105 bees collected / site / sampling time")
+dataTIME100<-dataTIME %>% filter(TotalAbundance>=100)
+dataTIME100 %>% group_by(Site_Grouping) %>% tally()
+print("There are 13 sites with at least 100 bees collected / site / sampling time")
+
+
+```
+
+
