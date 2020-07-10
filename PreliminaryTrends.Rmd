@@ -1,0 +1,32 @@
+---
+title: "Species Distribution"
+output: html_document
+---
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+
+```
+
+
+```{r}
+data<-read.csv("../CaliBombus/bumble_inventory.csv")
+head(data)
+dataSUM <- data %>% select("Site_Name", "Verified.Bee.species.ID") %>% filter(!Verified.Bee.species.ID %in% c("", "NA - Andrena?", "NA - Anthophorid", "NA - Anthophorid?", "NA - fly (bumble mimic)", "NA - nonBombus", "NA - Osmia?", "NA - robber fly", "NA - Xylocopa"))
+dataSUM
+
+speciesCOUNT<-dataSUM %>% group_by(Site_Name) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% group_by(Site_Name) %>% summarise(SpeciesRichness=sum(count))
+speciesCOUNT
+
+ggplot(speciesCOUNT, aes(x=Site_Name, y=SpeciesRichness)) +geom_bar(stat="identity")+ theme(axis.text.x=element_text(angle=90, size=5))
+
+speciesCOUNTsite<-dataSUM %>%group_by(Site_Name) %>% count(Verified.Bee.species.ID) 
+caliSITE<-speciesCOUNTsite %>% group_by(Site_Name) %>% mutate(totAbund=sum(n)) %>% filter(totAbund>=100)
+
+caliSITE
+ggplot(caliSITE, aes(fill=Verified.Bee.species.ID, y=n, x=Site_Name)) + 
+    geom_bar(position="stack", stat="identity") + theme(axis.text.x=element_text(angle=90, size=10))
+
+```
