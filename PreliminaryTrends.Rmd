@@ -146,19 +146,19 @@ TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc")%>% select(Verified
 
 head(TotalBreakdown)
 
-AllSpp<-TotalBreakdown %>% pivot_wider(names_from = Site_Grouping, values_from = SpeciesAbundance) %>% 
-  arrange(Verified.Bee.species.ID)
+AllSpp<-TotalBreakdown %>% pivot_wider(names_from = Verified.Bee.species.ID, values_from = SpeciesAbundance) %>% 
+  arrange(Site_Grouping)
 head(AllSpp)
 #Replace NAs with 0 
 AllSpp <- AllSpp %>% replace(is.na(.), 0)
-
+AllSpp
 ```
 
 # Species Accumulation Curves 
 ```{r}
 
 # Need to convert dataframe to a matrix and remove first column 
-SpeciesAcc<-AllSpp %>% select(!Verified.Bee.species.ID) %>% as.matrix()
+SpeciesAcc<-AllSpp %>% select(!Site_Grouping) %>% as.matrix()
 SpeciesAcc
 #Methods for species accumulation
 #"collector" adds sites in the order they happen to be in the data
@@ -184,6 +184,12 @@ plot(OAcurve$individuals, OAcurve$richness)
 
 
 # Species Richness and Shannon's Diversity 
+```{r}
+H=diversity(SpeciesAcc, index="shannon")
+H
+
+
+```
 
 # NMDS - see if species change based on Ecoregion
 
