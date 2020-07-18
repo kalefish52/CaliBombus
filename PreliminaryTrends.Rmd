@@ -10,6 +10,7 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(tidyr)
+library(vegan)
 ```
 
 #Load all data 
@@ -115,7 +116,8 @@ print("There are 17 sites with at least 80 bees collected / site / sampling time
 
 ## Now that we have counts per site, filter out any extras based on site/time
 ```{r}
-## First things first, filter any data we'll want to exclude based on site/time 
+## First things first, filter any data we'll want to exclude based on site/time - 
+# Chose one time per site based on which timepoint had greatest abundance
 ## We are currently considering:
   ## Oakhurst (OA: 104 in May, exclude June)
   ## North Fork (NF: 98 in June, exclude may)
@@ -123,13 +125,14 @@ print("There are 17 sites with at least 80 bees collected / site / sampling time
 
 dataFinal<-dataTIME %>% filter(!Date_comb %in% c("7-May-19","3-Jun-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance) %>% unique() 
 
+#Combine californicus and fervidus as one species, according to Leif's characterization
 dataFinal<-dataFinal %>% 
   mutate(Verified.Bee.species.ID=recode(Verified.Bee.species.ID, californicus="fervidus"))
 
 
 #How many sites have more than one sampling time and how many bees were collected? 
 plot2<-dataFinal %>% filter(Site_Grouping != "misc") %>% select(Date_comb, Site_Grouping, TotalAbundance) %>% unique()
-
+plot2
 ggplot(plot2, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
 
@@ -139,24 +142,53 @@ ggplot(plot2, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
 ```{r}
 ## Need an overall breakdown of species by site
 # AllSpp<-dataFinal %>% select(Verified.Bee.species.ID, Site_Grouping, SpeciesAbundance) %>% spread(Site_Grouping, SpeciesAbundance,fill=0) %>% unique()
-TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc")%>% select(Verified.Bee.species.ID, Site_Grouping, SpeciesAbundance) %>% unique()
+TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc")%>% select(Verified.Bee.species.ID, Site_Grouping, SpeciesAbundance) %>% unique() 
 
 head(TotalBreakdown)
 
 AllSpp<-TotalBreakdown %>% pivot_wider(names_from = Site_Grouping, values_from = SpeciesAbundance) %>% 
   arrange(Verified.Bee.species.ID)
 head(AllSpp)
-AllSpp
-
-
+#Replace NAs with 0 
+AllSpp <- AllSpp %>% replace(is.na(.), 0)
 
 ```
-# Kaleigh - this tally of species per site is what we needed, BUT I realized we should pool "californicus" sp bees in with "fervidus".
-# was thinking we'd make a new Real_ID column with the Verified.Bee.species.ID except changing californicus to fervidus.
-# I think that's the next step, then the diversity metrics
+
+# Species Accumulation Curves 
 ```{r}
 
+# Need to convert dataframe to a matrix and remove first column 
+SpeciesAcc<-AllSpp %>% select(!Verified.Bee.species.ID) %>% as.matrix()
+SpeciesAcc
+#Methods for species accumulation
+#"collector" adds sites in the order they happen to be in the data
+# "random" adds sites in random order
+# "exact" finds the expected (mean) species richness
+# "coleman" finds the expected richness following Coleman et al. 1982
+# "rarefaction" finds the mean when accumulating individuals instead of sites.
+
+##Site level collection - demonstrates if we sampled enough sites 
+accCurve<-specaccum(SpeciesAcc, method="random", permutations=100)
+plot(accCurve$sites, accCurve$richness)
+
+## Individual Collection - demonstrates we sampled enough individuals 
+rareCurve<-specaccum(SpeciesAcc, method="rarefaction", permutations=100)
+plot(rareCurve$individual, rareCurve$richness)
+
+## Rarefaction curves for each site 
+OA<-SpeciesAcc[,1]
+OAcurve<-specaccum(OA, method="rarefaction", permutations=100)
+OAcurve
+plot(OAcurve$individuals, OAcurve$richness)
 ```
+
+
+# Species Richness and Shannon's Diversity 
+
+# NMDS - see if species change based on Ecoregion
+
+
+
 
 # Male tally
 ```{r}
