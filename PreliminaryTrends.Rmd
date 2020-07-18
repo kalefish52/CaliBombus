@@ -141,8 +141,8 @@ ggplot(plot2, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
 #Now we get the breakdown of species-by-site
 ```{r}
 ## Need an overall breakdown of species by site
-# AllSpp<-dataFinal %>% select(Verified.Bee.species.ID, Site_Grouping, SpeciesAbundance) %>% spread(Site_Grouping, SpeciesAbundance,fill=0) %>% unique()
-TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc")%>% select(Verified.Bee.species.ID, Site_Grouping, SpeciesAbundance) %>% unique() 
+head(dataFinal)
+TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc") %>% select(!sex.caste) %>% unique() 
 
 head(TotalBreakdown)
 
@@ -158,7 +158,7 @@ AllSpp
 ```{r}
 
 # Need to convert dataframe to a matrix and remove first column 
-SpeciesAcc<-AllSpp %>% select(!Site_Grouping) %>% as.matrix()
+SpeciesAcc<-AllSpp %>% select(!Site_Grouping,) %>% as.matrix()
 SpeciesAcc
 #Methods for species accumulation
 #"collector" adds sites in the order they happen to be in the data
@@ -192,7 +192,37 @@ H
 ```
 
 # NMDS - see if species change based on Ecoregion
+```{r}
 
+head(AllSpp)
+# Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
+comm_matrix<-AllSpp[,6:ncol(AllSpp)] %>% as.matrix()
+NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
+stressplot(NMDS)
+NMDS #Stress ok 
+
+#Get data scores and make new dataframe with site, ecoregion and collection date information
+data.scores<-as.data.frame(scores(NMDS))
+data.scores$date <- AllSpp$Date_comb
+data.scores$Site <-AllSpp$Site_Grouping
+data.scores$Ecoregion <-AllSpp$Ecoregion
+
+head(data.scores)
+
+#Gets NMDS info for each behavior
+species.scores<-as.data.frame(scores(NMDS, "species"))
+species.scores$species<-rownames(species.scores)
+
+
+## Plot it using ggplot
+ggplot() + geom_point(data.scores, aes(x=NMDS1, y=NMDS2, colour=Site), size=2)+ geom_text(species.scores, aes(x=NMDS1, y=NMDS2, label=species))
+
+
+
+
+
+
+```
 
 
 
