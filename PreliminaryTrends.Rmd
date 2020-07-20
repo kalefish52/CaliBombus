@@ -278,13 +278,37 @@ species.scores<-as.data.frame(scores(NMDS, "species"))
 species.scores$species<-rownames(species.scores)
 
 ## Plot it using ggplot
-ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), position=position_jitter(width=1.5, height=1.5))+scale_x_continuous(limits = c(-2.5, 2))
+ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), position=position_jitter(width=2, height=2))+scale_x_continuous(limits = c(-3, 3))
 
 ## Anosim - are communities different by ecoregion
 ano = anosim(comm_matrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
 ano
 
 #No significant differences between ecoregions in community composition
+
+# Run again without vos 
+vosmatrix<-AllSpp[,7:ncol(AllSpp)] %>% as.matrix()
+NMDSvos=metaMDS(vosmatrix, k=2, distance="bray") 
+stressplot(NMDSvos)
+NMDSvos #Stress ok 
+
+#Get data scores and make new dataframe with site, ecoregion and collection date information
+data.scoresvos<-as.data.frame(scores(NMDSvos))
+data.scoresvos$date <- AllSpp$Date_comb
+data.scoresvos$Site <-AllSpp$Site_Grouping
+data.scoresvos$Ecoregion <-AllSpp$Ecoregion
+head(data.scoresvos)
+
+#Gets NMDS info for each behavior
+species.scoresvos<-as.data.frame(scores(NMDSvos, "species"))
+species.scoresvos$species<-rownames(species.scoresvos)
+
+## Plot it using ggplot
+ggplot() + geom_point(data=data.scoresvos, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ geom_text(data=species.scoresvos, aes(x=NMDS1, y=NMDS2, label=species), position=position_jitter(width=2, height=2))+scale_x_continuous(limits = c(-3, 3))
+
+## Anosim - are communities different by ecoregion
+ano = anosim(vosmatrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
+ano
 ```
 
 
