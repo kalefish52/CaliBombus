@@ -11,6 +11,8 @@ library(ggplot2)
 library(stringr)
 library(tidyr)
 library(vegan)
+library(janitor)
+library(gtsummary)
 ```
 
 #Load all data 
@@ -69,8 +71,9 @@ dateRANGE %>% filter(range != 0 & range <= 3) %>% unique() %>% select(Site_Group
 #Filter data by final sites (>10 km apart) and sampling time
 ```{r}
 #Group species by site_grouping and date of collection (pooled sites that are less than >20 km apart) and make species richness column for each site and species abundance column 
-speciesCOUNT<-dataALL %>% filter(Site_Grouping != "misc") %>% group_by(Site_Grouping, Date_comb) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
 
+speciesCOUNT<-dataALL %>% filter(Site_Grouping != "misc") %>% group_by(Site_Grouping, Date_comb) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
+speciesCOUNT
 #Add Total Abundance column(total number of bombus/site)
 speciesCOUNT<-speciesCOUNT %>% mutate(TotalAbundance=sum(SpeciesAbundance))
 
@@ -125,6 +128,7 @@ print("There are 17 sites with at least 80 bees collected / site / sampling time
 
 dataFinal<-dataTIME %>% filter(!Date_comb %in% c("7-May-19","3-Jun-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance) %>% unique() 
 
+dataFinal
 #Combine californicus and fervidus as one species, according to Leif's characterization
 dataFinal<-dataFinal %>% 
   mutate(Verified.Bee.species.ID=recode(Verified.Bee.species.ID, californicus="fervidus"))
@@ -137,12 +141,38 @@ ggplot(plot2, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
 
 ```
+```{r}
+## How many sites and regions had which species?? 
+
+TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc") %>% select(!sex.caste) %>% unique() 
+
+#Number of ecoregions for each species
+EcoregionNum<-TotalBreakdown %>% select(Ecoregion, Verified.Bee.species.ID) %>% group_by(Verified.Bee.species.ID) %>% unique() %>% mutate(count=1) %>% 
+  mutate(ecoregionnum=sum(count)) %>% select(Verified.Bee.species.ID, ecoregionnum) %>% unique()
+#Number of sites for each species
+SiteNum<-TotalBreakdown %>% select(Ecoregion, Verified.Bee.species.ID, Site_Grouping) %>% group_by(Verified.Bee.species.ID) %>% unique() %>% mutate(count=1) %>% 
+  mutate(Sitenum=sum(count)) %>% select(Verified.Bee.species.ID, Sitenum) %>% unique()
+SiteNum
+  
+#Total number of individuals for each species 
+Totalspecies<-TotalBreakdown %>% select(Verified.Bee.species.ID, SpeciesAbundance) %>% group_by(Verified.Bee.species.ID) %>%  mutate(totalspeciesabundance=sum(SpeciesAbundance)) %>% select(Verified.Bee.species.ID, totalspeciesabundance) %>% unique()
+
+
+
+SummComm<-left_join(SiteNum, EcoregionNum, by="Verified.Bee.species.ID")
+SummComm<-SummComm %>% rename(Number_of_Sites=Sitenum) %>% rename(Number_of_Ecoregions=ecoregionnum) 
+CommunityInfo<-left_join(SummComm, Totalspecies, by="Verified.Bee.species.ID")
+Finaldescript<-CommunityInfo %>% 
+  mutate(Percentage=(totalspeciesabundance/(sum(CommunityInfo$totalspeciesabundance))*100))
+           
+write.csv(Finaldescript, file="StrangeTable1.csv")
+
+```
 
 #Now we get the breakdown of species-by-site
 ```{r}
 ## Need an overall breakdown of species by site
-head(dataFinal)
-TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc") %>% select(!sex.caste) %>% unique() 
+
 
 head(TotalBreakdown)
 
@@ -215,7 +245,7 @@ species.scores$species<-rownames(species.scores)
 
 
 ## Plot it using ggplot
-ggplot() + geom_point(data.scores, aes(x=NMDS1, y=NMDS2, colour=Site), size=2)+ geom_text(species.scores, aes(x=NMDS1, y=NMDS2, label=species))
+ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Site), size=2)+ geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))
 
 
 
