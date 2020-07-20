@@ -17,7 +17,7 @@ library(gtsummary)
 
 #Load all data 
 ##Filter out non-Bombus samples
-##Select relevant data columns
+##Select relevant data columns for downstream analyses 
 ```{r}
 data<-read.csv("../CaliBombus/CaliBombus_inventory_main.csv")
 #data <- read.csv("/Volumes/GoogleDrive/My Drive/Kristal_WoodardLab/2020 Projects/2020.CalibombusCommunities/Analyses/CaliBombus_inventory_main.csv")
@@ -41,7 +41,6 @@ speciesCOUNT<-speciesCOUNT %>% mutate(TotalAbundance=sum(SpeciesAbundance))
 #Use this data frame for sampling time specific questions
 dataTOTAL<-left_join(dataALL, speciesCOUNT, by=c("Site_Grouping", 
                                                "Verified.Bee.species.ID"))
-head(dataTOTAL)
 
 
 ```
@@ -59,9 +58,9 @@ dataALL$Date<-as.Date(dates, "%d%b%Y")
 #Make column with number of days between sampling dates 
 dateRANGE <-dataALL %>% group_by(Site_Grouping) %>% mutate(range=(max(Date)-min(Date)))
 
-#Find all sites with less than three days to combine 
-dateRANGE %>% filter(range != 0 & range <= 3) %>% unique() %>% select(Site_Grouping, Date, range) %>% unique()
-#this has stopped working - KW
+#Find all sites with less than three days to combine - do not rerun because changed manually in CaliBombus_inventor_main.csv file 
+#dateRANGE %>% filter(range != 0 & range <= 3) %>% unique() %>% select(Site_Grouping, Date, range) %>% unique()
+
 
 
 ## Changed dates for SC, MK, WM to earliest collection date to combine manually in excel as Date_comb
@@ -74,6 +73,7 @@ dateRANGE %>% filter(range != 0 & range <= 3) %>% unique() %>% select(Site_Group
 
 speciesCOUNT<-dataALL %>% filter(Site_Grouping != "misc") %>% group_by(Site_Grouping, Date_comb) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
 speciesCOUNT
+
 #Add Total Abundance column(total number of bombus/site)
 speciesCOUNT<-speciesCOUNT %>% mutate(TotalAbundance=sum(SpeciesAbundance))
 
@@ -126,26 +126,53 @@ print("There are 17 sites with at least 80 bees collected / site / sampling time
   ## North Fork (NF: 98 in June, exclude may)
   ## Wawona (WA: 84 in June, exclude July)
 
-dataFinal<-dataTIME %>% filter(!Date_comb %in% c("7-May-19","3-Jun-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance) %>% unique() 
+dataFinal<-dataTIME %>% filter(Site_Grouping != "misc") %>% filter(!Date_comb %in% c("7-May-19","3-Jun-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance) 
 
-dataFinal
+
 #Combine californicus and fervidus as one species, according to Leif's characterization
+dataFinal
 dataFinal<-dataFinal %>% 
-  mutate(Verified.Bee.species.ID=recode(Verified.Bee.species.ID, californicus="fervidus"))
+  mutate(Verified.Bee.species.ID=recode(Verified.Bee.species.ID, californicus="fervidus")) %>% mutate(sex.caste=recode(sex.caste, female="worker")) 
 
-
-#How many sites have more than one sampling time and how many bees were collected? 
-plot2<-dataFinal %>% filter(Site_Grouping != "misc") %>% select(Date_comb, Site_Grouping, TotalAbundance) %>% unique()
+##FINAL SITES - Grouped with 10km of each other and one sampling time per site 
+FinalSites<-dataFinal %>% select(Date_comb, Site_Grouping, TotalAbundance) %>% unique()
 plot2
 ggplot(plot2, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
 
 ```
+
+# Site and Ecoregion Characteristics and Informations - Descriptive Information for Mansucript
 ```{r}
-## How many sites and regions had which species?? 
+#What is the average number of bees per site? 
+AvgMeanSite<-dataFinal %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(mean=mean(TotalAbundance))
+sdMeanSite<-dataFinal %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% 
+  summarize(SD=sd(TotalAbundance))
+print(paste("We sampled a mean of", AvgMeanSite, "bees per site with a standard deviation of", sdMeanSite))
+dataFinal
+#How many males did we collect total relative to females across all sites? 
+TotalSexCollected<-dataFinal %>% select(sex.caste) %>% mutate(count=1) %>% group_by(sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, total)
+TotalSexCollected %>% mutate(RelativeAbundance=(total/sum(TotalSexCollected$total))*100)
 
-TotalBreakdown<-dataFinal %>% filter(Site_Grouping != "misc") %>% select(!sex.caste) %>% unique() 
+#How many males did we collect per site? 
+SiteSex<-dataFinal %>% select(sex.caste, Site_Grouping) %>% mutate(count=1) %>%  group_by(Site_Grouping, sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, Site_Grouping, total) 
+SiteSex
+ggplot(SiteSex, aes(x=Site_Grouping, y=total, fill=sex.caste)) +geom_bar(stat="identity")
 
+#How many males did we collect per ecoregion? 
+SiteEcoregion<-dataFinal %>% select(sex.caste, Ecoregion) %>% mutate(count=1) %>%  group_by(Ecoregion, sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, Ecoregion, total) 
+SiteEcoregion
+ggplot(SiteEcoregion, aes(x=Ecoregion, y=total, fill=sex.caste)) +geom_bar(stat="identity")
+
+
+
+```
+
+
+#Table 1 Information
+How many sites and regions had which species?? 
+Includes the number of sites and ecoregions with which species 
+```{r}
 #Number of ecoregions for each species
 EcoregionNum<-TotalBreakdown %>% select(Ecoregion, Verified.Bee.species.ID) %>% group_by(Verified.Bee.species.ID) %>% unique() %>% mutate(count=1) %>% 
   mutate(ecoregionnum=sum(count)) %>% select(Verified.Bee.species.ID, ecoregionnum) %>% unique()
@@ -256,9 +283,4 @@ ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Site), size
 
 
 
-# Male tally
-```{r}
-## Where were males collected, and of which species?
-males<-dataFinal %>% filter(Site_Grouping != "misc", sex.caste == "male") %>% select(Date_comb, Site_Grouping, Verified.Bee.species.ID, sex.caste) %>% unique()
-males %>% group_by(Verified.Bee.species.ID, Site_Grouping)  %>% tally()
-```
+
