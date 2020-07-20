@@ -13,12 +13,13 @@ library(tidyr)
 library(vegan)
 library(janitor)
 library(gtsummary)
+library(tibble)
 ```
 
 #Load all data 
 ##Filter out non-Bombus samples
 ##Select relevant data columns for downstream analyses 
-```{r}
+```{r, echo=FALSE}
 data<-read.csv("../CaliBombus/CaliBombus_inventory_main.csv")
 #data <- read.csv("/Volumes/GoogleDrive/My Drive/Kristal_WoodardLab/2020 Projects/2020.CalibombusCommunities/Analyses/CaliBombus_inventory_main.csv")
 head(data)
@@ -28,7 +29,7 @@ head(dataALL)
 
 ```
 #Filter data by final sites (>10km apart)
-```{r}
+```{r, echo=FALSE}
 #Group species by site_grouping and date of collection (pooled sites that are less than >20 km apart) and make species richness column for each site and species abundance column 
 speciesCOUNT<-dataALL %>% group_by(Site_Grouping) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
 
@@ -46,7 +47,7 @@ dataTOTAL<-left_join(dataALL, speciesCOUNT, by=c("Site_Grouping",
 ```
 
 # Combine dates that are within 3 days of each other
-```{r}
+```{r, echo=FALSE}
 
 #Combine sampling times for sites that were collected within 3 days of each other 
 
@@ -68,7 +69,7 @@ dateRANGE <-dataALL %>% group_by(Site_Grouping) %>% mutate(range=(max(Date)-min(
 ```
 
 #Filter data by final sites (>10 km apart) and sampling time
-```{r}
+```{r, echo=FALSE}
 #Group species by site_grouping and date of collection (pooled sites that are less than >20 km apart) and make species richness column for each site and species abundance column 
 
 speciesCOUNT<-dataALL %>% filter(Site_Grouping != "misc") %>% group_by(Site_Grouping, Date_comb) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
@@ -94,7 +95,7 @@ ggplot(plot, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
 
 
 #Filter data by number collected / sampling time 
-```{r}
+```{r, echo=FALSE}
 #Filter based on having at least 110 individuals / site total 
 dataFILT110<-dataTOTAL %>% filter(TotalAbundance>=110)
 dataFILT110 %>% group_by(Site_Grouping)  %>% tally()
@@ -118,7 +119,7 @@ print("There are 17 sites with at least 80 bees collected / site / sampling time
 ```
 
 ## Now that we have counts per site, filter out any extras based on site/time
-```{r}
+```{r, echo=FALSE}
 ## First things first, filter any data we'll want to exclude based on site/time - 
 # Chose one time per site based on which timepoint had greatest abundance
 ## We are currently considering:
@@ -143,7 +144,7 @@ ggplot(FinalSites, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
 ```
 
 # Site and Ecoregion Characteristics and Informations - Descriptive Information for Mansucript
-```{r}
+```{r, echo=FALSE}
 #What is the average number of bees per site? 
 AvgMeanSite<-dataFinal %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(mean=mean(TotalAbundance))
 sdMeanSite<-dataFinal %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% 
@@ -170,7 +171,7 @@ ggplot(SiteEcoregion, aes(x=Ecoregion, y=total, fill=sex.caste)) +geom_bar(stat=
 How many sites and regions had which species?? 
 Includes the number of sites and ecoregions with which species 
 Treating all inviduals collected equally 
-```{r}
+```{r, echo=FALSE}
 #Remove sex.caste information 
 TotalBreakdown <- dataFinal %>% select(!sex.caste) %>% unique()
 #Number of ecoregions for each species
@@ -198,7 +199,7 @@ write.csv(Finaldescript, file="StrangeTable1.csv")
 
 #Transform data with species abundance for each site/ecoregion in order to do diversity statistics
 Use AllSpp for all diversity analyses 
-```{r}
+```{r, echo=FALSE}
 head(TotalBreakdown)
 ##Site Level Numbers 
 AllSpp<-TotalBreakdown %>% pivot_wider(names_from = Verified.Bee.species.ID, values_from = SpeciesAbundance) %>% 
@@ -223,7 +224,7 @@ TotalEco
 ```
 
 #Table 2:  Diversity, Richness Metrics by Ecoregion and by Site
-```{r}
+```{r, echo=FALSE}
 # Shannon's Diversity for Ecoregion level and Site Level 
 ##Site Level 
 Shannonmatrix<-AllSpp %>% select(!c(Date_comb, SpeciesRichness, TotalAbundance, Ecoregion, Site_Grouping))
@@ -314,30 +315,16 @@ ano
 
 # Species Accumulation Curves 
 ```{r}
-# Need to convert dataframe to a matrix and remove first column 
-SpeciesAcc<-AllSpp %>% select(!Site_Grouping,) %>% as.matrix()
+# Need to convert dataframe to a matrix and remove columns and make site names row names
+
+SpeciesAcc<-AllSpp %>% select(!c(Date_comb, Ecoregion, SpeciesRichness, TotalAbundance)) %>% column_to_rownames(var="Site_Grouping")
+SpeciesAcc %>% as.matrix()
 SpeciesAcc
-#Methods for species accumulation
-#"collector" adds sites in the order they happen to be in the data
-# "random" adds sites in random order
-# "exact" finds the expected (mean) species richness
-# "coleman" finds the expected richness following Coleman et al. 1982
-# "rarefaction" finds the mean when accumulating individuals instead of sites.
-
-##Site level collection - demonstrates if we sampled enough sites 
-accCurve<-specaccum(SpeciesAcc, method="random", permutations=100)
-plot(accCurve$sites, accCurve$richness)
-
-## Individual Collection - demonstrates we sampled enough individuals 
-rareCurve<-specaccum(SpeciesAcc, method="rarefaction", permutations=100)
-plot(rareCurve$individual, rareCurve$richness)
-
-## Rarefaction curves for each site 
-OA<-SpeciesAcc[,1]
-OAcurve<-specaccum(OA, method="rarefaction", permutations=100)
-OAcurve
-plot(OAcurve$individuals, OAcurve$richness)
+rarecurve(SpeciesAcc, label=TRUE, cex=0.4, col="blue")
+estimateR(SpeciesAcc)
+#S.Chao1 is estimated species pool 
 ```
+
 
 
 
