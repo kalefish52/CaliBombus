@@ -136,8 +136,8 @@ dataFinal<-dataFinal %>%
 
 ##FINAL SITES - Grouped with 10km of each other and one sampling time per site 
 FinalSites<-dataFinal %>% select(Date_comb, Site_Grouping, TotalAbundance) %>% unique()
-plot2
-ggplot(plot2, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
+
+ggplot(FinalSites, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
 
 ```
@@ -246,6 +246,8 @@ Eco_Shannon
 All_Eco<-left_join(TotalEco, Eco_Shannon, by="Ecoregion")
 head(All_Eco)
 
+
+
 #Combine Diversity Metrics with TotalBreakdown data for site level info
 head(TotalBreakdown)
 #SpeciesAbundance and Species Richness are both Site Level Values 
@@ -255,13 +257,9 @@ head(All_Site)
 ```
 
 
-
-
-
-
-
 # NMDS - see if species change based on Ecoregion
-```{r}
+We did not find any significant differences in community composition between ecoregions
+```{r, echo=FALSE}
 # Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
 comm_matrix<-AllSpp[,6:ncol(AllSpp)] %>% as.matrix()
 NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
@@ -280,7 +278,13 @@ species.scores<-as.data.frame(scores(NMDS, "species"))
 species.scores$species<-rownames(species.scores)
 
 ## Plot it using ggplot
-ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Site), size=2)+ geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))
+ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), position=position_jitter(width=1.5, height=1.5))+scale_x_continuous(limits = c(-2.5, 2))
+
+## Anosim - are communities different by ecoregion
+ano = anosim(comm_matrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
+ano
+
+#No significant differences between ecoregions in community composition
 ```
 
 
@@ -310,12 +314,6 @@ OAcurve<-specaccum(OA, method="rarefaction", permutations=100)
 OAcurve
 plot(OAcurve$individuals, OAcurve$richness)
 ```
-
-
-
-
-
-
 
 
 
