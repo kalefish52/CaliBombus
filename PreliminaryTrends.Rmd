@@ -203,7 +203,7 @@ AllSpp<-TotalBreakdown %>% pivot_wider(names_from = Verified.Bee.species.ID, val
 head(AllSpp)
 #Replace NAs with 0 
 AllSpp <- AllSpp %>% replace(is.na(.), 0)
-
+AllSpp
 ##Ecoregion level numbers
 EcoregionData<-TotalBreakdown %>% select(Ecoregion, Verified.Bee.species.ID, SpeciesAbundance) %>% group_by(Ecoregion, Verified.Bee.species.ID) %>% mutate(EcoAbund=sum(SpeciesAbundance)) %>% select(!SpeciesAbundance) %>% unique()
 
@@ -311,7 +311,7 @@ ano
 ```
 
 
-# Species Accumulation Curves and Chao1
+## Species Accumulation Curves and Chao1 in Vegan 
 ```{r}
 # Need to convert dataframe to a matrix and remove columns and make site names row names
 
@@ -323,6 +323,129 @@ estimateR(SpeciesAcc)
 #S.Chao1 is estimated species pool 
 ```
 
+## Species Accumulation Curves in iNEXT
+```{r}
+library(iNEXT)
+#q=0 (richness)
+#q=1 (shannon)
+#q=2 (simpson)
 
+#iNEXT package uses species by site dataframes
+#Transform data (opposite of vegan package) and make species names as row names instead of column 
+
+#Make dataframes for all ecoregions 
+NEXTSppALL<-TotalBreakdown %>% 
+  select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion)) %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
+  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
+
+#Rarefactions for all ecoregions in one graph 
+str(NEXTSppAll)
+#Species Richness, Hill Number 1
+out<-iNEXT(NEXTSppAll, q=c(1), datatype="abundance", endpoint=150)
+ggiNEXT(out, type=1) + theme_bw(base_size=10)
+
+#Make dataframes for each ecoregion (5 total)
+#SN
+NEXTSppSN<-TotalBreakdown %>% filter(Ecoregion=="SN") %>%
+  select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion)) %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
+  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
+str(NEXTSppSN)
+out<-iNEXT(NEXTSppSN, q=c(1), datatype="abundance", endpoint=150)
+SN<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)
+SN
+
+#CW
+NEXTSppCW<-TotalBreakdown %>% filter(Ecoregion=="CW") %>%
+  select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion)) %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
+  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
+str(NEXTSppCW)
+out<-iNEXT(NEXTSppCW, q=c(1), datatype="abundance", endpoint=150)
+CW<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)
+CW
+
+#NW
+NEXTSppNW<-TotalBreakdown %>% filter(Ecoregion=="NW") %>%
+  select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion)) %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
+  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
+str(NEXTSppNW)
+out<-iNEXT(NEXTSppNW, q=c(1), datatype="abundance", endpoint=150)
+NW<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)
+NW
+
+#CR
+NEXTSppCR<-TotalBreakdown %>% filter(Ecoregion=="CR") %>%
+  select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion)) %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
+  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
+str(NEXTSppCR)
+out<-iNEXT(NEXTSppCR, q=c(1), datatype="abundance", endpoint=150)
+CR<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+theme(legend.position = "bottom",
+ legend.title=element_blank(),
+ text=element_text(size=18))+guides(linetype=FALSE)
+CR
+
+
+#SNE
+NEXTSppSNE<-TotalBreakdown %>% filter(Ecoregion=="SNE") %>%
+  select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion)) %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
+  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
+str(NEXTSppSNE)
+out<-iNEXT(NEXTSppSNE, q=c(1), datatype="abundance", endpoint=150)
+SNE<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
+ legend.title=element_blank(),
+ text=element_text(size=18)) + ggtitle("SNE")
+SNE
+
+
+multiplot(SN, CW, NW, CR, SNE, cols=2)
+
+```
+## Multiplot function
+```{r, echo=FALSE}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
 
 
