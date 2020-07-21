@@ -188,7 +188,7 @@ SummComm<-SummComm %>% rename(Number_of_Sites=Sitenum) %>% rename(Number_of_Ecor
 CommunityInfo<-left_join(SummComm, Totalspecies, by="Verified.Bee.species.ID")
 Finaldescript<-CommunityInfo %>% 
   mutate(Percentage=(totalspeciesabundance/(sum(CommunityInfo$totalspeciesabundance))*100))
-           
+head(Finaldescript)
 write.csv(Finaldescript, file="StrangeTable1.csv")
 
 ```
@@ -238,8 +238,10 @@ Ecoregion<-EcoSpp$Ecoregion
 Eco_Shannon<-cbind(Ecoregion, EcoShannon)
 Eco_Shannon<-as.data.frame(Eco_Shannon)
 Eco_Shannon
-All_Eco<-left_join(TotalEco, Eco_Shannon, by="Ecoregion")
-head(All_Eco)
+All_Eco<-left_join(TotalEco, Eco_Shannon, by="Ecoregion") %>% ungroup() %>% select(Ecoregion, EcoAbund, EcoRich, EcoShannon) %>% unique()
+FinalEco<-All_Eco %>% group_by(Ecoregion) %>% mutate(EcoAbundTot=sum(EcoAbund)) %>% select(!EcoAbund) %>% unique()
+FinalEco
+write.csv(FinalEco, "EcoregionMetrics.csv")
 
 
 
@@ -248,7 +250,9 @@ head(TotalBreakdown)
 #SpeciesAbundance and Species Richness are both Site Level Values 
 All_Site<-left_join(TotalBreakdown, Site_Shannon, by="Site_Grouping")
 head(All_Site)
-
+write.csv(All_Site, "AllSiteMetrics.csv")
+AllSiteRich<-All_Site %>% select(Site_Grouping, Ecoregion, SpeciesRichness, TotalAbundance, SiteShannon) %>% unique()
+write.csv(AllSiteRich, "Allsiterich.csv")
 ```
 
 
