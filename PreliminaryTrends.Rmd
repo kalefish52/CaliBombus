@@ -140,8 +140,18 @@ ggplot(FinalSites, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
 
 ```
+## How many caliginosus do we have? 
+```{r}
+head(dataFinal)
+caliginosus<-dataFinal %>% select(Site_Grouping, Ecoregion, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Verified.Bee.species.ID=="caliginosus") %>% mutate(PCal=((SpeciesAbundance/TotalAbundance)*100))
+totalcollected<-caliginosus %>% mutate(totalcal=sum(SpeciesAbundance))
+print(paste("We collected 36 caliginosus across all sites" ))
+caliginosus
+ggplot(caliginosus, aes(x=Site_Grouping, y=PCal)) + geom_bar(stat="identity") + ggtitle("Percentage caliginosus at each site")
+```
 
-# Site and Ecoregion Characteristics and Informations - Descriptive Information for Mansucript
+
+##Site and Ecoregion Characteristics and Informations - Descriptive Information for Mansucript
 ```{r, echo=FALSE}
 #What is the average number of bees per site? 
 AvgMeanSite<-dataFinal %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(mean=mean(TotalAbundance))
