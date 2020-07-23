@@ -361,7 +361,9 @@ NEXTSppSN<-TotalBreakdown %>% filter(Ecoregion=="SN") %>%
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
 str(NEXTSppSN)
 out<-iNEXT(NEXTSppSN, q=c(1), datatype="abundance", endpoint=150)
-SN<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)
+SN<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
+ legend.title=element_blank(),
+ text=element_text(size=10), plot.title=element_text(size=10)) + ggtitle("SN")
 SN
 
 #CW
@@ -370,7 +372,9 @@ NEXTSppCW<-TotalBreakdown %>% filter(Ecoregion=="CW") %>%
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
 str(NEXTSppCW)
 out<-iNEXT(NEXTSppCW, q=c(1), datatype="abundance", endpoint=150)
-CW<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)
+CW<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
+ legend.title=element_blank(),
+ text=element_text(size=10), plot.title=element_text(size=10)) + ggtitle("CW")
 CW
 
 #NW
@@ -379,7 +383,9 @@ NEXTSppNW<-TotalBreakdown %>% filter(Ecoregion=="NW") %>%
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
 str(NEXTSppNW)
 out<-iNEXT(NEXTSppNW, q=c(1), datatype="abundance", endpoint=150)
-NW<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)
+NW<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
+ legend.title=element_blank(),
+ text=element_text(size=10), plot.title=element_text(size=10)) + ggtitle("NW")
 NW
 
 #CR
@@ -388,9 +394,9 @@ NEXTSppCR<-TotalBreakdown %>% filter(Ecoregion=="CR") %>%
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
 str(NEXTSppCR)
 out<-iNEXT(NEXTSppCR, q=c(1), datatype="abundance", endpoint=150)
-CR<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+theme(legend.position = "bottom",
+CR<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),
- text=element_text(size=18))+guides(linetype=FALSE)
+ text=element_text(size=10), plot.title=element_text(size=10)) + ggtitle("CR")
 CR
 
 
@@ -402,15 +408,20 @@ str(NEXTSppSNE)
 out<-iNEXT(NEXTSppSNE, q=c(1), datatype="abundance", endpoint=150)
 SNE<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),
- text=element_text(size=18)) + ggtitle("SNE")
+ text=element_text(size=10), plot.title=element_text(size=10)) + ggtitle("SNE") 
+
+
+      
 SNE
 
 
 multiplot(SN, CW, NW, CR, SNE, cols=2)
 
+
 ```
-## Multiplot function
-```{r, echo=FALSE}
+
+## Multiplot function from Rcookbook 
+```{r, include=FALSE}
 # Multiple plot function
 #
 # ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
