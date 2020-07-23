@@ -349,9 +349,9 @@ NEXTSppALL<-TotalBreakdown %>%
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
 
 #Rarefactions for all ecoregions in one graph 
-str(NEXTSppAll)
+str(NEXTSppALL)
 #Species Richness, Hill Number 1
-out<-iNEXT(NEXTSppAll, q=c(1), datatype="abundance", endpoint=150)
+out<-iNEXT(NEXTSppALL, q=c(1), datatype="abundance", endpoint=150)
 ggiNEXT(out, type=1) + theme_bw(base_size=10)
 
 #Make dataframes for each ecoregion (5 total)
@@ -418,8 +418,12 @@ SNE
 
 
 
-multiplot(SN, CW, NW, CR, SNE, cols=3)
-
+final<-multiplot(SN, CW, NW, CR, SNE, cols=3) 
+ggsave("final.png", 
+ plot = final, # or give ggplot object name as in myPlot,
+ width = 5, height = 5, 
+ units = "in", # other options c("in", "cm", "mm"), 
+ dpi = 600)
 
 ```
 
