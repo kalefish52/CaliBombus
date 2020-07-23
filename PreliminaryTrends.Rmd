@@ -126,7 +126,8 @@ print("There are 17 sites with at least 80 bees collected / site / sampling time
   ## North Fork (NF: 98 in June, exclude may)
   ## Wawona (WA: 84 in June, exclude July)
 
-dataFinal<-dataTIME %>% filter(Site_Grouping != "misc") %>% filter(!Date_comb %in% c("7-May-19","3-Jun-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance) 
+head(dataTIME)
+dataFinal<-dataTIME %>% filter(Site_Grouping != "misc") %>% filter(!Date_comb %in% c("7-May-19","3-Jun-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance, Latitude, Longitude, Elevation_ft) 
 
 
 #Combine californicus and fervidus as one species, according to Leif's characterization
@@ -140,6 +141,16 @@ ggplot(FinalSites, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
 
 ```
+
+## Get dataframe with spatial info to make map 
+```{r}
+head(dataFinal)
+spatialinfo<-(dataFinal) %>% select(Date_comb, Site_Grouping, Ecoregion, Latitude, Longitude, Elevation_ft) %>% unique()
+write.csv(spatialinfo, "spatialinfo.csv")
+
+```
+
+
 ## How many caliginosus do we have? 
 ```{r}
 head(dataFinal)
