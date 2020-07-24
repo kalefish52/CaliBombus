@@ -148,6 +148,10 @@ head(dataFinal)
 spatialinfo<-(dataFinal) %>% select(Date_comb, Site_Grouping, Ecoregion, Latitude, Longitude, Elevation_ft) %>% unique()
 write.csv(spatialinfo, "spatialinfo.csv")
 
+## Changed site coordinates so that no sites were in areas we don't have sampling permits 
+
+
+
 ```
 
 

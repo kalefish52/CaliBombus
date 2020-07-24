@@ -1,0 +1,36 @@
+---
+title: "CaliBombus Map"
+output: html_document
+---
+
+#Load Packages
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(gtsummary)
+library(sf)
+
+
+```
+#Import data 
+```{r}
+#Import ecoregion shape file from EPA/USGS Level III 
+ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp")
+head(ecoregionshape)
+
+
+#Look at geometry type
+st_geometry_type(ecoregionshape)
+
+#Check CRS (coordinate reference system)
+st_crs(ecoregionshape)
+
+
+ggplot() + 
+  geom_sf(data = ecoregionshape, size = 3, color = "black", fill = "cyan1") + 
+  ggtitle("AOI Boundary Plot") + 
+  coord_sf()
+
+```
+
