@@ -30,11 +30,12 @@ site.sf <- st_as_sf(site, coords = c("lon", "lat"), crs = 4326) %>% st_transform
 site.sf
 
 
-  
-tm_shape(s.sf.eco) + tm_polygons(col="US_L3NAME", border.col="white", palette="Pastel1", title="Ecoregion")+ tm_legend(outside = TRUE)+tm_shape(site.sf) + tm_dots(size=0.05, col="black") + tm_text("Site_Grouping", just = "left", size = 0.5)
+#Map with Labels 
+tm_shape(s.sf.eco) + tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+ tm_legend(outside = TRUE)+tm_shape(site.sf) + tm_dots(size=0.2, col="black")+tm_text("Site_Grouping", just = "left", ymod = 0.5, size = 0.8) 
 
-
-
+#Map without labels
+tm_shape(s.sf.eco) + tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+tm_shape(site.sf) + tm_dots(size=0.2, col="black")+
+  tm_layout(frame=FALSE)+tm_legend(outside=TRUE, legend.position=c("right", "top"))
 
 
 ```
