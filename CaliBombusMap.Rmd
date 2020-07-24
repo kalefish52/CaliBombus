@@ -8,7 +8,6 @@ output: html_document
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-library(gtsummary)
 library(sf)
 library(tmap)
 
@@ -17,31 +16,26 @@ library(tmap)
 #Import data 
 ```{r}
 #Import ecoregion shape file from EPA/USGS Level III 
-ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp")
+ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp") %>% st_transform("+proj=longlat +datum=WGS84")
 head(ecoregionshape)
+#Check coordinate system 
+st_crs(ecoregionshape)
+ecoregionshape$L3_KEY
 
 #Import site information 
-site<-read.csv("./spatialinfofinal.csv")
-head(site)
-#Convert to spatial object 
-site.sf <- st_as_sf(site, coords = c("lon", "lat"), crs = 4326) 
+site<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat) 
+site
+#Have to put in as long/lat
+site.sf <- st_as_sf(site, coords = c("lon", "lat"), crs = 4326) %>% st_transform("+proj=longlat +datum=WGS84")
 site.sf
 
- tm_shape(ecoregionshape) + tm_polygons(col="grey", border.col="white")
 
-#Look at geometry type
-st_geometry_type(ecoregionshape)
-
-#Check CRS (coordinate reference system)
-st_crs(ecoregionshape)
+  
+tm_shape(s.sf.eco) + tm_polygons(col="US_L3NAME", border.col="white", palette="Pastel1", title="Ecoregion")+ tm_legend(outside = TRUE)+tm_shape(site.sf) + tm_dots(size=0.05, col="black") + tm_text("Site_Grouping", just = "left", size = 0.5)
 
 
 
 
-ggplot() + 
-  geom_sf(data = ecoregionshape, size = 3, color = "black", fill = "cyan1") + 
-  ggtitle("AOI Boundary Plot") + 
-  coord_sf()
 
 ```
 
