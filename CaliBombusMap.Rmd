@@ -10,6 +10,7 @@ library(ggplot2)
 library(tidyr)
 library(gtsummary)
 library(sf)
+library(tmap)
 
 
 ```
@@ -19,12 +20,22 @@ library(sf)
 ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp")
 head(ecoregionshape)
 
+#Import site information 
+site<-read.csv("./spatialinfofinal.csv")
+head(site)
+#Convert to spatial object 
+site.sf <- st_as_sf(site, coords = c("lon", "lat"), crs = 4326) 
+site.sf
+
+ tm_shape(ecoregionshape) + tm_polygons(col="grey", border.col="white")
 
 #Look at geometry type
 st_geometry_type(ecoregionshape)
 
 #Check CRS (coordinate reference system)
 st_crs(ecoregionshape)
+
+
 
 
 ggplot() + 
