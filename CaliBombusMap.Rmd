@@ -47,8 +47,10 @@ tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", pale
 NIFAsites<-read.csv("./NIFASites.csv") %>% mutate(sampled="no") %>% select(Site, lon, lat, Ecoregion, sampled)
 NIFAsites
 
+sitecali<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat, Ecoregion.1) 
+
 #Combine NIFA with calibombus sites 
-calisites<-site %>% select(Site_Grouping, lon, lat, Ecoregion.1) %>% rename(Site=Site_Grouping) %>% rename(Ecoregion=Ecoregion.1) %>% mutate(sampled="yes")
+calisites<-sitecali %>% select(Site_Grouping, lon, lat, Ecoregion.1) %>% rename(Site=Site_Grouping) %>% rename(Ecoregion=Ecoregion.1) %>% mutate(sampled="yes")
 calisites
 
 #Bind both dataframes 
@@ -60,16 +62,9 @@ site.sf <- st_as_sf(Sites_NIFA, coords = c("lon", "lat"), crs = 4326) %>% st_tra
 site.sf
 
 tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+tm_shape(site.sf) + tm_dots(size=0.2, col="sampled", palette=c(yes='black', no='red'))+
-  tm_layout(frame=FALSE, legend.text.size=0.4, legend.width=1)+tm_legend(outside=TRUE, legend.position=c("right", "top"))
+  tm_layout(frame=FALSE, legend.text.size=0.4, legend.width=1)+tm_legend(legend.position=c("left", "bottom"), outside=TRUE)
 
 
-tm_layout("Wealth (or so)",
-          legend.title.size = 1,
-          legend.text.size = 0.6,
-          legend.position = c("left","bottom"),
-          legend.bg.color = "white",
-          legend.digits = 5,
-          legend.bg.alpha = 1)
 
 
 
