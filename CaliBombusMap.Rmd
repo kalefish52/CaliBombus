@@ -44,7 +44,7 @@ tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", pale
 ## NIFA MAP 
 ```{r}
 #Import new NIFA sites 
-NIFAsites<-read.csv("./NIFASites.csv") %>% mutate(sampled="no") %>% select(Site, lon, lat, Ecoregion, sampled)
+NIFAsites<-read.csv("./NIFASites.csv") %>% mutate(sampled="no") %>% select(Site, lon, lat, Ecoregion, sampled) 
 NIFAsites
 
 sitecali<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat, Ecoregion.1) 
@@ -61,8 +61,11 @@ Sites_NIFA
 site.sf <- st_as_sf(Sites_NIFA, coords = c("lon", "lat"), crs = 4326) %>% st_transform("+proj=longlat +datum=WGS84")
 site.sf
 
-tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+tm_shape(site.sf) + tm_dots(size=0.2, col="sampled", palette=c(yes='black', no='red'))+
-  tm_layout(frame=FALSE, legend.text.size=0.4, legend.width=1)+tm_legend(legend.position=c("left", "bottom"), outside=TRUE)
+tm_shape(ecoregionshape) + 
+  tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+
+  tm_shape(site.sf) + 
+  tm_dots(size=0.2, col="sampled", palette=c(yes='black', no='red'), title="Sampling Status")+
+  tm_layout(frame=FALSE, legend.text.size=0.4, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE)
 
 
 
