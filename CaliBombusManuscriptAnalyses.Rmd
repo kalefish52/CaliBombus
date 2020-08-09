@@ -15,7 +15,7 @@ library(janitor)
 library(gtsummary)
 library(tibble)
 library(iNEXT)
-
+library(ggrepel)
 library(ggpubr)
 
 ```
@@ -133,9 +133,7 @@ print("There are 17 sites with at least 80 bees collected / site / sampling time
   ## North Fork (NF: 98 in June, exclude may)
   ## Wawona (WA: 84 in June, exclude July)
 
-head(dataTIME)
-dataFinal<-dataTIME %>% filter(Site_Grouping != "misc") %>% filter(!Date_comb %in% c("7-May-19","3-Jun-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance, Latitude, Longitude, Elevation_ft) 
-
+dataFinal<-dataTIME %>% filter(Site_Grouping != "misc") %>% filter(!Date_comb %in% c("3-Jun-19","7-May-19","6-Jul-19")) %>% select(Date_comb, Site_Grouping, Ecoregion, Verified.Bee.species.ID, sex.caste, SpeciesAbundance, SpeciesRichness, TotalAbundance, Latitude, Longitude, Elevation_ft) 
 
 #Combine californicus and fervidus as one species, according to Leif's characterization
 dataFinal<-dataFinal %>% 
@@ -146,6 +144,8 @@ FinalSites<-dataFinal %>% select(Date_comb, Site_Grouping, TotalAbundance) %>% u
 FinalSites
 ggplot(FinalSites, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
+
+dataFinal
 
 ```
 ## Add USGS Ecoregion Info
@@ -186,6 +186,12 @@ MinSite<-dataFINAL %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% su
 MinSite
 MaxSite<-dataFINAL %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(Min=max(TotalAbundance))
 MaxSite
+
+#What is the average richness per site?
+AvgRichSite<-dataFINAL %>% select(Site_Grouping, SpeciesRichness) %>% unique() %>% summarize(mean=mean(SpeciesRichness))
+sdRichSite<-dataFINAL %>% select(Site_Grouping, SpeciesRichness) %>% unique() %>% 
+  summarize(SD=sd(SpeciesRichness))
+print(paste("We sampled a mean of", AvgRichSite, "bee richness per site with a standard deviation of", sdRichSite))
 
 #How many males did we collect total relative to females across all sites? 
 TotalSexCollected<-dataFINAL %>% select(sex.caste) %>% mutate(count=1) %>% group_by(sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, total)
@@ -301,6 +307,17 @@ AllSiteRich<-All_Site %>% select(Site_Grouping, Ecoregion.1, SpeciesRichness, To
 AllSiteRich
 
 ```
+## Supplementary Table 1 
+```{r}
+SuppTable<-AllSpp %>% select(!c(SpeciesRichness, EcoregionNum)) %>%
+  rename("Date Collected"=Date_comb) %>% 
+  rename("Site"=Site_Grouping) %>% 
+  rename("Ecoregion"=Ecoregion.1) %>% 
+  group_by(Ecoregion)
+SuppTable
+
+```
+
 
 
 # NMDS - see if species change based on Ecoregion
@@ -358,7 +375,7 @@ ano
 NMDSvosplot<-ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), position=position_jitter(width=1,height=1)) +scale_x_continuous(limits = c(-3.5, 3.5))
 NMDSvosplot
 
-library(ggrepel)
+
 NMDSvosno<-ggplot() + geom_point(data=data.scoresvos, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ geom_text_repel(data=species.scoresvos, aes(x=NMDS1, y=NMDS2, label=species))+scale_x_continuous(limits = c(-3, 3))
 NMDSvosno
 
@@ -367,8 +384,6 @@ ggarrange(NMDSvosplot, NMDSvosno,
           legend="right", labels=c("A", "B"))
 
 ggsave("NMDS.png", width=7, height=6, dpi=600)
-
-
 
 
 ```

@@ -36,21 +36,20 @@ tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", pale
 
 #Map without labels
 tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+tm_shape(site.sf) + tm_dots(size=0.2, col="black")+
-  tm_layout(frame=FALSE)+tm_legend(outside=TRUE, legend.position=c("right", "top"))
-
+ tm_layout(frame=FALSE, legend.text.size=0.4, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE)
 
 ```
 
 ## NIFA MAP 
 ```{r}
 #Import new NIFA sites 
-NIFAsites<-read.csv("./NIFASites.csv") %>% mutate(sampled="no") %>% select(Site, lon, lat, Ecoregion, sampled) 
+NIFAsites<-read.csv("./NIFASites.csv") %>% mutate(sampled="2020") %>% select(Site, lon, lat, Ecoregion, sampled) 
 NIFAsites
 
 sitecali<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat, Ecoregion.1) 
 
 #Combine NIFA with calibombus sites 
-calisites<-sitecali %>% select(Site_Grouping, lon, lat, Ecoregion.1) %>% rename(Site=Site_Grouping) %>% rename(Ecoregion=Ecoregion.1) %>% mutate(sampled="yes")
+calisites<-sitecali %>% select(Site_Grouping, lon, lat, Ecoregion.1) %>% rename(Site=Site_Grouping) %>% rename(Ecoregion=Ecoregion.1) %>% mutate(sampled="2019")
 calisites
 
 #Bind both dataframes 
