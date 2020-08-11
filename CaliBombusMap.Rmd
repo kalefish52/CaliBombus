@@ -20,7 +20,17 @@ ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp") %>% st_transform("+proj=lon
 head(ecoregionshape)
 #Check coordinate system 
 st_crs(ecoregionshape)
-ecoregionshape$L3_KEY
+ecoregionshape$US_L3NAME
+
+##Recode variable names so they are shorter 
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Central Basin and Range' = "CentralBasinRange")
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Coast Range' = "CoastRange")
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Mojave Basin and Range' = "Mojave")
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Central California Foothills and Coastal Mountains' = "CentralCaliforniaFoothills")
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Central California Valley' = "CentralValley")
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Klamath Mountains/California High North Coast Range' = "Klamath")
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Southern California/Northern Baja Coast' = "Southern California")
+ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Eastern Cascades Slopes and Foothills' = "Eastern Cascades")
 
 #Import site information 
 
@@ -58,13 +68,13 @@ Sites_NIFA
 
 #Have to put in as long/lat
 site.sf <- st_as_sf(Sites_NIFA, coords = c("lon", "lat"), crs = 4326) %>% st_transform("+proj=longlat +datum=WGS84")
-site.sf
+
 
 tm_shape(ecoregionshape) + 
   tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+
   tm_shape(site.sf) + 
   tm_dots(size=0.2, col="sampled", palette=c(yes='black', no='red'), title="Sampling Status")+
-  tm_layout(frame=FALSE, legend.text.size=0.4, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE)
+  tm_layout(frame=FALSE, legend.text.size=0.6, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE)
 
 
 
