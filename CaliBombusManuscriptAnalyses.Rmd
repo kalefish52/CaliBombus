@@ -316,6 +316,7 @@ SuppTable<-AllSpp %>% select(!c(SpeciesRichness, EcoregionNum)) %>%
   group_by(Ecoregion)
 SuppTable
 
+ 
 ```
 
 
@@ -366,6 +367,7 @@ head(data.scoresvos)
 #Gets NMDS info for each behavior
 species.scoresvos<-as.data.frame(scores(NMDSvos, "species"))
 species.scoresvos$species<-rownames(species.scoresvos)
+
 ## Anosim - are communities different by ecoregion
 ano = anosim(vosmatrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
 ano
@@ -385,8 +387,57 @@ ggarrange(NMDSvosplot, NMDSvosno,
 
 ggsave("NMDS.png", width=7, height=6, dpi=600)
 
+```
+
+
+## Run Anosims for each ecoregion
+```{r}
+## Subset ecoregions and then run anosim between subsets 
+Klamath<-AllSpp %>% filter(Ecoregion.1 == "Klamath") %>% mutate(system=
+                                                                  "mountains")
+Cascades<-AllSpp %>% filter(Ecoregion.1 == "Cascades") %>% mutate(system=
+                                                                    "mountains")
+SierraNevada<-AllSpp %>% filter(Ecoregion.1 == "SierraNevada")%>% mutate(system=
+                                                                    "mountains")
+
+CoastRange<-AllSpp %>% filter(Ecoregion.1 == "CoastRange") %>% mutate(system=
+                                                                    "coast")
+CoastalSage<-AllSpp %>% filter(Ecoregion.1 == "CoastalSage")%>% mutate(system=
+                                                                    "coast")
+
+CentralBasin<-AllSpp %>% filter(Ecoregion.1 == "CentralBasin")%>% mutate(system=
+                                                                    "whitemountains")
+
+#Are the white mountains different from the coast? 
+mc1<-rbind(CentralBasin, CoastalSage, CoastRange) 
+mc<-mc1 %>% select(!system)
+mcmatrix<-mc[,8:ncol(mc)] %>% as.matrix()
+set.seed(123456)
+mcNMDS=metaMDS(mcmatrix, k=2, distance="bray") 
+stressplot(mcNMDS)
+data.scoresmc<-as.data.frame(scores(mcNMDS))
+data.scoresmc$system<-mc1$system
+anomc = anosim(mcmatrix, data.scoresmc$system, distance = "bray", permutations = 9999)
+anomc
+
+#Change Central Basin to coast because they are similar 
+#Are the mountains vs. the coast (+ white mountains) distinct 
+CentralBasin<-AllSpp %>% filter(Ecoregion.1 == "CentralBasin")%>% mutate(system="coast")
+systemall<-rbind(Klamath, Cascades, SierraNevada, CoastRange, CoastalSage, CentralBasin)
+syst<-systemall %>% select(!system)
+systm<-syst[,8:ncol(syst)] %>% as.matrix()
+set.seed(123456)
+systNMDS=metaMDS(systm, k=2, distance="bray") 
+stressplot(systNMDS)
+data.scoressyst<-as.data.frame(scores(systNMDS))
+data.scoressyst$system<-systemall$system
+anomsy = anosim(systm, data.scoressyst$system, distance = "bray", permutations = 9999)
+anomsy    
+
+
 
 ```
+
 
 
 ## Species Accumulation Curves and Chao1 in Vegan 
