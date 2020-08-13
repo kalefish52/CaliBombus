@@ -435,6 +435,15 @@ anomsy = anosim(systm, data.scoressyst$system, distance = "bray", permutations =
 anomsy    
 
 
+## Is the central basin different from the others when vos is included? 
+vosmc<-syst[,7:ncol(syst)] %>% as.matrix()
+vosmc
+vosmcNMDS=metaMDS(vosmc, k=2, distance="bray") 
+
+data.scoresvm<-as.data.frame(scores(vosmcNMDS))
+data.scoresvm$system<-systemall$system
+anomsvm = anosim(vosmc, data.scoresvm$system, distance = "bray", permutations = 9999)
+anomsvm 
 
 ```
 
