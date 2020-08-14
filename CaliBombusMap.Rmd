@@ -20,17 +20,20 @@ ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp") %>% st_transform("+proj=lon
 head(ecoregionshape)
 #Check coordinate system 
 st_crs(ecoregionshape)
-ecoregionshape$US_L3NAME
+ecoregionshape$NA_L3NAME
 
 ##Recode variable names so they are shorter 
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Central Basin and Range' = "CentralBasinRange")
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Coast Range' = "CoastRange")
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Mojave Basin and Range' = "Mojave")
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Central California Foothills and Coastal Mountains' = "CentralCaliforniaFoothills")
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Central California Valley' = "CentralValley")
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Klamath Mountains/California High North Coast Range' = "Klamath")
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Southern California/Northern Baja Coast' = "Southern California")
-ecoregionshape$US_L3NAME<-recode(ecoregionshape$US_L3NAME, 'Eastern Cascades Slopes and Foothills' = "Eastern Cascades")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Coast Range' = "CoastRange")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central Basin and Range' = "CentralBasin")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Mojave Basin and Range' = "MojaveBasinRange")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sierra Nevada' = "SierraNevada")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'California Coastal Sage, Chaparral, and Oak Woodlands' = "CoastalSage")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central California Valley' = "CentralCaliforniaValley")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Klamath Mountains' = "Klamath")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Southern and Baja California Pine-Oak Mountains' = "SouthernCaliforniaMountains")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Northern Basin and Range' = "NorthernBasin")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sonoran Desert' = "SonoranDesert")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Eastern Cascades Slopes and Foothills' = "EasternCascades")
 
 #Import site information 
 
@@ -40,13 +43,18 @@ site
 site.sf <- st_as_sf(site, coords = c("lon", "lat"), crs = 4326) %>% st_transform("+proj=longlat +datum=WGS84")
 site.sf
 
-
 #Map with Labels 
-tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+ tm_legend(outside = TRUE)+tm_shape(site.sf) + tm_dots(size=0.2, col="black")+tm_text("Site_Grouping", just = "left", ymod = 0.5, size = 0.8) 
+tm_shape(ecoregionshape) + tm_polygons(col="NA_L3NAME", border.col="white", title="Ecoregion")+ tm_legend(outside = TRUE)+tm_shape(site.sf) + tm_dots(size=0.2, col="black")+tm_text("Site_Grouping", just = "left", ymod = 0.5, size = 0.8) 
 
 #Map without labels
-tm_shape(ecoregionshape) + tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+tm_shape(site.sf) + tm_dots(size=0.2, col="black")+
- tm_layout(frame=FALSE, legend.text.size=0.4, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE)
+
+library(tmaptools)
+
+
+tm_shape(ecoregionshape) + tm_style("col_blind")+
+  tm_polygons(col="NA_L3NAME", border.col="white", palette="Dark2", title="Ecoregion")+
+  tm_shape(site.sf) + tm_dots(size=0.2, col="black")+
+ tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE) 
 
 ```
 
