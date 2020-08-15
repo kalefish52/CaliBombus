@@ -145,7 +145,7 @@ FinalSites
 ggplot(FinalSites, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
   geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
 
-dataFinal
+dataFinal %>% filter(Site_Grouping=="WM") %>% unique()
 
 ```
 ## Add USGS Ecoregion Info
