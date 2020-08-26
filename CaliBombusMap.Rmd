@@ -1,5 +1,5 @@
 ---
-title: "CaliBombus Map"
+title: "CaliBombus Spatial"
 output: html_document
 ---
 
@@ -10,83 +10,143 @@ library(ggplot2)
 library(tidyr)
 library(sf)
 library(tmap)
+library(sp)
+library(spatialEco)
+library(rgdal)
+library(stringr)
 
 
 ```
-#Import data 
+
+#Import data from EPA/USGS and CaliBombus
+## Note: USGS is in a projected coordinate system and GPS coordinates are in a geographic coordinate system 
+### It is best too use projected coordinate system for geospatial analyses
+I used the SF package, sp package and rgal package
+The SF transformation function wasn't changing the lat/long coordinates to xy 
+Also changed NA_L3Names so they are shorter 
 ```{r}
 #Import ecoregion shape file from EPA/USGS Level III 
-ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp") %>% st_transform("+proj=longlat +datum=WGS84")
-head(ecoregionshape)
-#Check coordinate system 
-st_crs(ecoregionshape)
-ecoregionshape$NA_L3NAME
+ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp") #sf package
+#Check coordinate reference system 
+st_crs(ecoregionshape) #sf package
+# Coordinate reference system is USA_Contiguous_Albers_Equal_Area_Conic_USGS_version
+# Datum is North American Datum 1983
 
 ##Recode variable names so they are shorter 
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Coast Range' = "CoastRange")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central Basin and Range' = "CentralBasin")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Mojave Basin and Range' = "MojaveBasinRange")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sierra Nevada' = "SierraNevada")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'California Coastal Sage, Chaparral, and Oak Woodlands' = "CoastalSage")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central California Valley' = "CentralCaliforniaValley")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Coast Range' = "Coast Range")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central Basin and Range' = "Central Basin")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Mojave Basin and Range' = "Mojave Basin Range")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sierra Nevada' = "Sierra Nevada")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'California Coastal Sage, Chaparral, and Oak Woodlands' = "Coastal Sage")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central California Valley' = "Central California Valley")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Klamath Mountains' = "Klamath")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Southern and Baja California Pine-Oak Mountains' = "SouthernCaliforniaMountains")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Northern Basin and Range' = "NorthernBasin")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sonoran Desert' = "SonoranDesert")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Eastern Cascades Slopes and Foothills' = "EasternCascades")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Southern and Baja California Pine-Oak Mountains' = "Southern California Mountains")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Northern Basin and Range' = "Northern Basin")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sonoran Desert' = "Sonoran Desert")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Eastern Cascades Slopes and Foothills' = "Eastern Cascades")
 
-#Import site information 
+#Condense ecoregion to name and geometry (ie. coordinates)
+ecoregions<-ecoregionshape %>% select(NA_L3NAME, geometry)
 
+#Read in site gps coordinates
 site<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat) 
-site
-#Have to put in as long/lat
-site.sf <- st_as_sf(site, coords = c("lon", "lat"), crs = 4326) %>% st_transform("+proj=longlat +datum=WGS84")
+
+#Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
+cords<-SpatialPoints(cbind(site$lon, site$lat), proj4string=CRS("+proj=longlat"))
+coordscon<-spTransform(cords, CRS("+init=epsg:5070"))
+
+#Transform to data frame and add site information 
+convertdata<-data.frame(coordscon) %>% cbind(site$Site_Grouping)%>% rename(site="site$Site_Grouping" ) %>% 
+  rename(x="coords.x1") %>% 
+  rename(y="coords.x2")
+convertdata
+convertdata<-convertdata %>% 
+  select(site, x, y)
+
+#Convert to sf object to match with ecoregion 
+site.sf <- st_as_sf(convertdata, coords=c("x", "y"), crs=5070) 
 site.sf
 
-#Map with Labels 
-tm_shape(ecoregionshape) + tm_polygons(col="NA_L3NAME", border.col="white", title="Ecoregion")+ tm_legend(outside = TRUE)+tm_shape(site.sf) + tm_dots(size=0.2, col="black")+tm_text("Site_Grouping", just = "left", ymod = 0.5, size = 0.8) 
-
+#Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
+Calibombussites_ecoregions<-point.in.poly(site.sf, ecoregions) %>% as.data.frame()
+Calibombussites_ecoregions
+```
+#Make a pretty map 
+```{r}
 #Map without labels
-
-library(tmaptools)
-
-
-tm_shape(ecoregionshape) + tm_style("col_blind")+
+tm_shape(ecoregions) + tm_style("col_blind")+
   tm_polygons(col="NA_L3NAME", border.col="white", palette="Dark2", title="Ecoregion")+
   tm_shape(site.sf) + tm_dots(size=0.2, col="black")+
- tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE) 
+ tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("right", "top"), outside=TRUE) 
 
 ```
 
-## NIFA MAP 
+## Add historical data from Leif's dataset
+# Filter by collection - ie. Bohart Collection to see if Robins 1983 paper matches these records
 ```{r}
-#Import new NIFA sites 
-NIFAsites<-read.csv("./NIFASites.csv") %>% mutate(sampled="2020") %>% select(Site, lon, lat, Ecoregion, sampled) 
-NIFAsites
-
-sitecali<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat, Ecoregion.1) 
-
-#Combine NIFA with calibombus sites 
-calisites<-sitecali %>% select(Site_Grouping, lon, lat, Ecoregion.1) %>% rename(Site=Site_Grouping) %>% rename(Ecoregion=Ecoregion.1) %>% mutate(sampled="2019")
-calisites
-
-#Bind both dataframes 
-Sites_NIFA<-rbind(NIFAsites, calisites)
-Sites_NIFA
-
-#Have to put in as long/lat
-site.sf <- st_as_sf(Sites_NIFA, coords = c("lon", "lat"), crs = 4326) %>% st_transform("+proj=longlat +datum=WGS84")
+Leifdata<-read.csv("./BBNACalifornia.csv")
+## Make sure all is distinct 
+Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
 
 
-tm_shape(ecoregionshape) + 
-  tm_polygons(col="US_L3NAME", border.col="white", palette="PuBuGn", title="Ecoregion")+
-  tm_shape(site.sf) + 
-  tm_dots(size=0.2, col="sampled", palette=c(yes='black', no='red'), title="Sampling Status")+
-  tm_layout(frame=FALSE, legend.text.size=0.6, legend.width=1)+tm_legend(legend.position=c("left", "top"), outside=TRUE)
+Leifdata %>% filter(species=="suckleyi")
 
+#Get Thorp data (identified by R. Thorp)
+Robin<-Leifdata[grep("horp", Leifdata$det.by),] 
+Robin %>% filter(species=="rufocinctus")
 
+#Get J. Ascher data (identified by J. Ascher)
+Ascher<-Leifdata[grep("scher", Leifdata$det.by),] 
 
+#Get Bohart collection data - anyh remaining that Robin may have used 
+Bohart<-Leifdata[grep("ohart", Leifdata$Institution),] 
 
+#Combine all data and then make sure there are no duplicates 
+FullData<-rbind(Robin, Ascher, Bohart) %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
+
+print(paste("We have", nrow(FullData), "datapoints from Bohart, Thorp and Ascher"))
+
+#Subset to all collections after 1983
+Fullpre83<-FullData %>% filter(year<="1983")
+print(paste("We have", nrow(Fullpre83), "datapoints in or before 1983"))
+
+#Subset to all collections after 1983
+Fullpost83<-FullData %>% filter(year>"1983")
+print(paste("We have", nrow(Fullpost83), "datapoints after 1983"))
 
 
 ```
+
+
+# Assign each one of Leif's datapoints to an Ecoregion using USGS Level III
+
+```{r}
+
+Pre83<-Fullpre83 %>% select(BBNA.code, species, sex, year, longitude, latitude) %>% na.omit()
+print(paste("We removed", (nrow(Fullpre83)-nrow(Pre83)), "datapoints that had NA coordinates"))
+
+#Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
+COORDSpre83<-SpatialPoints(cbind(Pre83$longitude, Pre83$latitude), proj4string=CRS("+proj=longlat"))
+coordspre83<-spTransform(COORDSpre83, CRS("+init=epsg:5070"))
+
+#Transform to data frame and add site information 
+convertpre83<-data.frame(coordspre83) 
+convertp83comb<-cbind(convertpre83, Pre83) %>% 
+  rename(x="coords.x1") %>% 
+  rename(y="coords.x2")
+
+#Convert to sf object to match with ecoregion 
+site.sf.pre83 <- st_as_sf(convertp83comb, coords=c("x", "y"), crs=5070) 
+site.sf.pre83
+
+#Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
+Pre83_ecoregions<-point.in.poly(site.sf.pre83, ecoregions) %>% as.data.frame()
+nrow(Pre83_ecoregions)
+
+```
+
+
+
+
+
+

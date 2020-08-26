@@ -1,6 +1,6 @@
 ---
 title: "CaliBombus"
-author: Kaleigh Fisher and Kristal Watrous
+author: Kaleigh Fisher
 date: 14 July 2020
 output: html_document
 ---
@@ -148,16 +148,17 @@ ggplot(FinalSites, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
 dataFinal %>% filter(Site_Grouping=="WM") %>% unique()
 
 ```
-## Add USGS Ecoregion Info
+## Add USGS Ecoregion Info to each site 
 ```{r}
-head(dataALL)
-Ecoregions<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, Ecoregion.1, EcoregionNum)
+#Remove previously assigned ecoregion from dataFinal
+dataeco<-dataFinal %>% select(!Ecoregion)
+head(Calibombussites_ecoregions) #from CaliSpatial rmd
+Ecoregions<-Calibombussites_ecoregions %>% rename(Site_Grouping=site) %>% rename(Ecoregion.1=NA_L3NAME)
 head(Ecoregions)
+
 #Join USGS ecoregion info with existing dataframe
-dataUSE<-left_join(dataFinal, Ecoregions, by="Site_Grouping")
-head(dataUSE)
-dataFINAL<-dataUSE %>% select(!Ecoregion)
-dataFINAL
+dataFINAL<-left_join(dataFinal, Ecoregions, by="Site_Grouping")
+head(dataFINAL)
 ```
 
 ## How many specific individuals (species) do we have? 
@@ -226,17 +227,19 @@ TotalBreakdown <- dataFINAL %>% select(!c(sex.caste, Latitude, Longitude, Elevat
 #Number of ecoregions for each species
 EcoregionNum<-TotalBreakdown %>% select(Ecoregion.1, Verified.Bee.species.ID) %>% unique() %>% group_by(Verified.Bee.species.ID) %>% mutate(count=1) %>% 
   mutate(ecoregionnum=sum(count)) %>% select(Verified.Bee.species.ID, ecoregionnum) %>% unique()
+EcoregionNum
 
 #Number of sites for each species
-SiteNum<-TotalBreakdown %>% select(Verified.Bee.species.ID, Site_Grouping) %>% unique() %>% group_by(Verified.Bee.species.ID) %>% mutate(count=1) 
-SiteNum %>% filter(Verified.Bee.species.ID=="vosnesenskii")%>% 
+SiteNum<-TotalBreakdown %>% select(Verified.Bee.species.ID, Site_Grouping) %>% unique() %>% group_by(Verified.Bee.species.ID) %>% mutate(count=1) %>% 
   mutate(Sitenum=sum(count)) %>% select(Verified.Bee.species.ID, Sitenum) %>% unique()
+
 
 #Total number of individuals for each species 
 Totalspecies<-TotalBreakdown %>% select(Verified.Bee.species.ID, SpeciesAbundance, Site_Grouping) %>% unique() %>% group_by(Verified.Bee.species.ID) %>% mutate(totalspeciesabundance=sum(SpeciesAbundance)) %>% select(Verified.Bee.species.ID, totalspeciesabundance) %>% unique()
 Totalspecies
 
 SummComm<-left_join(SiteNum, EcoregionNum, by="Verified.Bee.species.ID")
+head(SummComm)
 SummComm<-SummComm %>% rename(Number_of_Sites=Sitenum) %>% rename(Number_of_Ecoregions=ecoregionnum) 
 CommunityInfo<-left_join(SummComm, Totalspecies, by="Verified.Bee.species.ID")
 Finaldescript<-CommunityInfo %>% 
@@ -275,7 +278,7 @@ TotalEco
 ```{r, echo=FALSE}
 # Shannon's Diversity for Ecoregion level and Site Level 
 ##Site Level 
-Shannonmatrix<-AllSpp %>% select(!c(Date_comb, SpeciesRichness, TotalAbundance, Ecoregion.1, Site_Grouping))
+Shannonmatrix<-AllSpp %>% select(!c(Date_comb, SpeciesRichness, TotalAbundance, Ecoregion.1, Site_Grouping, coords.x1, coords.x2, Ecoregion))
 Shannonmatrix
 Matrix<-as.matrix(Shannonmatrix)
 SiteShannon<-diversity(Matrix, index="shannon") %>% as.vector()
@@ -300,6 +303,7 @@ write.csv(FinalEco, "EcoregionMetrics.csv")
 
 
 #Combine Diversity Metrics with Total Breakdown data for site level info
+
 head(TotalBreakdown)
 #SpeciesAbundance and Species Richness are both Site Level Values 
 All_Site<-left_join(TotalBreakdown, Site_Shannon, by="Site_Grouping")
@@ -311,23 +315,22 @@ AllSiteRich
 ```
 ## Supplementary Table 1 
 ```{r}
-SuppTable<-AllSpp %>% select(!c(SpeciesRichness, EcoregionNum)) %>%
+AllSpp
+SuppTable<-AllSpp %>% select(!c(SpeciesRichness, coords.x1, coords.x2, Ecoregion, TotalAbundance)) %>%
   rename("Date Collected"=Date_comb) %>% 
   rename("Site"=Site_Grouping) %>% 
-  rename("Ecoregion"=Ecoregion.1) %>% 
+  rename("Ecoregion"=Ecoregion.1)%>% 
   group_by(Ecoregion)
 write.csv(SuppTable, "SuppTable.csv")
 
  
 ```
 
-
-
 # NMDS - see if species change based on Ecoregion
 We did not find any significant differences in community composition between ecoregions
 ```{r, width = 5, height = 5, dpi=600}
 # Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
-comm_matrix<-AllSpp[,7:ncol(AllSpp)] %>% as.matrix()
+comm_matrix<-AllSpp[,9:ncol(AllSpp)] %>% as.matrix()
 set.seed(123456)
 NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
 stressplot(NMDS)
@@ -353,7 +356,7 @@ ano
 #No significant differences between ecoregions in community composition
 
 # NMDS  with Vos Removed 
-vosmatrix<-AllSpp[,8:ncol(AllSpp)] %>% as.matrix()
+vosmatrix<-AllSpp[,10:ncol(AllSpp)] %>% as.matrix()
 set.seed(123456)
 NMDSvos=metaMDS(vosmatrix, k=2, distance="bray") 
 stressplot(NMDSvos)
@@ -378,16 +381,21 @@ ano
 ## Plot it using ggplot
 
 
-cols<-c("Cascades"="aquamarine4", "SierraNevada"="darkgoldenrod", "CentralBasin"="darkgoldenrod4", 
-        "Klamath"="olivedrab", "CoastRange"="plum4", "CoastalSage"="darkmagenta")
-NMDSvosplot<-ggplot() + geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ 
-scale_fill_manual(values=group.colors)+geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), position=position_jitter(width=1,height=1)) +scale_x_continuous(limits = c(-3.5, 3.5))+theme_bw()+
-  scale_colour_manual(values=cols)+scale_y_continuous(limits=c(-2,1.5))
-NMDSvosplot
+cols<-c("Cascades"="aquamarine4", 
+        "Sierra Nevada"="darkgoldenrod", 
+        "Central Basin"="darkgoldenrod4", 
+        "Klamath"="olivedrab", 
+        "Coast Range"="plum4", 
+        "Coastal Sage"="darkmagenta")
 
 
-NMDSvosno<-ggplot() + geom_point(data=data.scoresvos, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+ geom_text_repel(data=species.scoresvos, aes(x=NMDS1, y=NMDS2, label=species))+scale_x_continuous(limits = c(-3.5, 3.5))+theme_bw()+scale_colour_manual(values=cols)+theme_bw()+scale_y_continuous(limits=c(-2,1.5))
-
+NMDSvosno<-ggplot() + 
+  geom_point(data=data.scoresvos, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
+  geom_text_repel(data=species.scoresvos, aes(x=NMDS1, y=NMDS2, label=species))+
+  scale_x_continuous(limits = c(-3.5, 3.5))+
+  theme_bw()+scale_colour_manual(values=cols)+
+  theme_bw()+scale_y_continuous(limits=c(-2,1.5))
+NMDSvosno
 ggarrange(NMDSvosplot, NMDSvosno, 
             ncol=1, widths=c(1,1), common.legend=TRUE, 
           legend="right", labels=c("A", "B"))
@@ -461,9 +469,7 @@ NextEco
 str(NextEco)
 #Species Richness, Hill Number 1
 out<-iNEXT(NextEco, q=c(1), datatype="abundance", endpoint=1000)
-
 ggiNEXT(out, type=1) + theme_bw(base_size=10)
-
 out 
 
 ggsave("suppeco.png")
@@ -480,7 +486,9 @@ library(iNEXT)
 
 #iNEXT package uses species by site dataframes
 #Transform data (opposite of vegan package) and make species names as row names instead of column 
-commatrix<-TotalBreakdown %>% select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion.1, EcoregionNum)) %>% unique()
+TotalBreakdown
+ungroup(TotalBreakdown$Verified.Bee.species.ID)
+commatrix<-TotalBreakdown %>% select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion.1, EcoregionNum, coords.x.1, coords.x2)) %>% unique()
 commatrix
 
 NEXTSppALL<- commatrix%>% pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
