@@ -213,6 +213,7 @@ SiteEcoregion  %>% group_by(Ecoregion.1) %>% mutate(totinds=sum(total)) %>% ungr
 ggplot(SiteEcoregion, aes(x=Ecoregion.1, y=total, fill=sex.caste)) +geom_bar(stat="identity")+xlab("Ecoregion")+ylab("Number Bees Collected")
 ggsave("CasteRatios.png", dpi=600)
 
+
 ```
 
 ## Table 1 Information
@@ -331,6 +332,7 @@ We did not find any significant differences in community composition between eco
 ```{r, width = 5, height = 5, dpi=600}
 # Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
 comm_matrix<-AllSpp[,9:ncol(AllSpp)] %>% as.matrix()
+comm_matrix
 set.seed(123456)
 NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
 stressplot(NMDS)
@@ -396,9 +398,7 @@ NMDSvosno<-ggplot() +
   theme_bw()+scale_colour_manual(values=cols)+
   theme_bw()+scale_y_continuous(limits=c(-2,1.5))
 NMDSvosno
-ggarrange(NMDSvosplot, NMDSvosno, 
-            ncol=1, widths=c(1,1), common.legend=TRUE, 
-          legend="right", labels=c("A", "B"))
+
 
 ggsave("NMDS.png", width=7, height=6, dpi=600)
 
@@ -461,6 +461,7 @@ anomsvm = anosim(vosmc, data.scoresvm$system, distance = "bray", permutations = 
 anomsvm 
 
 ```
+
 ## Species Accumulation Curves in iNEXT for each Ecoregion  
 ```{r}
 TotalEco
@@ -469,7 +470,7 @@ NextEco
 str(NextEco)
 #Species Richness, Hill Number 1
 out<-iNEXT(NextEco, q=c(1), datatype="abundance", endpoint=1000)
-ggiNEXT(out, type=1) + theme_bw(base_size=10)
+ggiNEXT(out, type=1) + theme_bw(base_size=10) 
 out 
 
 ggsave("suppeco.png")
@@ -479,7 +480,6 @@ ggsave("suppeco.png")
 
 ## Species Accumulation Curves in iNEXT for each site 
 ```{r}
-library(iNEXT)
 #q=0 (richness)
 #q=1 (shannon)
 #q=2 (simpson)
@@ -487,10 +487,9 @@ library(iNEXT)
 #iNEXT package uses species by site dataframes
 #Transform data (opposite of vegan package) and make species names as row names instead of column 
 TotalBreakdown
-ungroup(TotalBreakdown$Verified.Bee.species.ID)
-commatrix<-TotalBreakdown %>% select(!c(TotalAbundance, SpeciesRichness, Date_comb, Ecoregion.1, EcoregionNum, coords.x.1, coords.x2)) %>% unique()
-commatrix
 
+commatrix<-TotalBreakdown %>% select(!c(Date_comb, Ecoregion, TotalAbundance, SpeciesRichness,  Ecoregion.1, coords.x1, coords.x2)) %>% unique()
+commatrix
 NEXTSppALL<- commatrix%>% pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
 NEXTSppALL
@@ -502,14 +501,15 @@ out<-iNEXT(NEXTSppALL, q=c(1), datatype="abundance", endpoint=150)
 
 ggiNEXT(out, type=1) + theme_bw(base_size=10)
 
-out 
+
 
 ```
+
 ## Rarefactions for Sierra Nevada
 ```{r}
 #Make dataframes for each ecoregion (6 total)
 #Make general dataframe that can then be filtered by ecoregion
-dfeco<-TotalBreakdown %>% select(!c(TotalAbundance, SpeciesRichness, Date_comb, EcoregionNum)) %>% unique()
+dfeco<-TotalBreakdown %>% select(!c(TotalAbundance, SpeciesRichness, Date_comb, EcoregionNum, Ecoregion.1, coords.x1, coords.x2)) %>% unique()
 dfeco
 
 #SierraNevada

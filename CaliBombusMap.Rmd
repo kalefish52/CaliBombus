@@ -105,44 +105,54 @@ Bohart<-Leifdata[grep("ohart", Leifdata$Institution),]
 FullData<-rbind(Robin, Ascher, Bohart) %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
 
 print(paste("We have", nrow(FullData), "datapoints from Bohart, Thorp and Ascher"))
-
-#Subset to all collections after 1983
-Fullpre83<-FullData %>% filter(year<="1983")
-print(paste("We have", nrow(Fullpre83), "datapoints in or before 1983"))
-
-#Subset to all collections after 1983
-Fullpost83<-FullData %>% filter(year>"1983")
-print(paste("We have", nrow(Fullpost83), "datapoints after 1983"))
-
-
 ```
 
 
 # Assign each one of Leif's datapoints to an Ecoregion using USGS Level III
-
 ```{r}
 
-Pre83<-Fullpre83 %>% select(BBNA.code, species, sex, year, longitude, latitude) %>% na.omit()
-print(paste("We removed", (nrow(Fullpre83)-nrow(Pre83)), "datapoints that had NA coordinates"))
+AllYears<-FullData %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
+print(paste("We removed", (nrow(FullData)-nrow(AllYears)), "datapoints that had NA coordinates"))
 
 #Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
-COORDSpre83<-SpatialPoints(cbind(Pre83$longitude, Pre83$latitude), proj4string=CRS("+proj=longlat"))
-coordspre83<-spTransform(COORDSpre83, CRS("+init=epsg:5070"))
+COORDSall<-SpatialPoints(cbind(AllYears$longitude, AllYears$latitude), proj4string=CRS("+proj=longlat"))
+coordsall<-spTransform(COORDSall, CRS("+init=epsg:5070"))
 
 #Transform to data frame and add site information 
-convertpre83<-data.frame(coordspre83) 
-convertp83comb<-cbind(convertpre83, Pre83) %>% 
+convertall<-data.frame(coordsall) 
+convertallcomb<-cbind(convertall, AllYears) %>% 
   rename(x="coords.x1") %>% 
   rename(y="coords.x2")
+head(convertallcomb)
 
 #Convert to sf object to match with ecoregion 
-site.sf.pre83 <- st_as_sf(convertp83comb, coords=c("x", "y"), crs=5070) 
-site.sf.pre83
+site.sf.all <- st_as_sf(convertallcomb, coords=c("x", "y"), crs=5070) 
+site.sf.all
 
 #Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
-Pre83_ecoregions<-point.in.poly(site.sf.pre83, ecoregions) %>% as.data.frame()
-nrow(Pre83_ecoregions)
+Allyears_ecoregion<-point.in.poly(site.sf.all, ecoregions) %>% as.data.frame()
+nrow(Allyears_ecoregion) 
+```
 
+#Subset historical datapoints by decade 
+```{r}
+Allyearseco<-Allyears_ecoregion %>% rename(Ecoregion=NA_L3NAME)
+
+# 1930-1959
+thirtyfifty<-Allyearseco %>% filter(between(year, 1930, 1959))
+print(paste("We have", nrow(thirtyfifty), "datapoints between 1930 and 1959"))
+
+# 1960-1989
+sixtyeighty<-Allyearseco %>% filter(between(year, 1960, 1989))
+print(paste("We have", nrow(sixtyeighty), "datapoints between 1960 and 1989"))
+
+# 2000-2019
+twothous<-Allyearseco %>% filter(between(year, 1990, 2019))
+print(paste("We have", nrow(twothous), "datapoints between 1990 and 2019"))
+
+#data pre 83
+Pre83_ecoregions<-Allyearseco %>% filter(year<="1983")
+print(paste("We have", nrow(Pre83_ecoregions), "datapoints before or in 1983"))
 ```
 
 
