@@ -26,7 +26,7 @@ The SF transformation function wasn't changing the lat/long coordinates to xy
 Also changed NA_L3Names so they are shorter 
 ```{r}
 #Import ecoregion shape file from EPA/USGS Level III 
-ecoregionshape<-st_read("./ca_eco_l3/ca_eco_l3.shp") #sf package
+ecoregionshape<-st_read("./USGS_ecoregions20/ca_eco_l3.shp") #sf package
 #Check coordinate reference system 
 st_crs(ecoregionshape) #sf package
 # Coordinate reference system is USA_Contiguous_Albers_Equal_Area_Conic_USGS_version
@@ -49,7 +49,7 @@ ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Eastern Cascades Slo
 ecoregions<-ecoregionshape %>% select(NA_L3NAME, geometry)
 
 #Read in site gps coordinates
-site<-read.csv("./spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat) 
+site<-read.csv("./USGS_ecoregions20/spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat) 
 
 #Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
 cords<-SpatialPoints(cbind(site$lon, site$lat), proj4string=CRS("+proj=longlat"))
