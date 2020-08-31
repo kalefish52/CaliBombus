@@ -4,7 +4,7 @@ output: html_document
 ---
 
 #Load Packages
-```{r}
+```{r, include=FALSE}
 library(dplyr)
 library(ggplot2)
 library(tidyr)
@@ -59,17 +59,16 @@ coordscon<-spTransform(cords, CRS("+init=epsg:5070"))
 convertdata<-data.frame(coordscon) %>% cbind(site$Site_Grouping)%>% rename(site="site$Site_Grouping" ) %>% 
   rename(x="coords.x1") %>% 
   rename(y="coords.x2")
-convertdata
 convertdata<-convertdata %>% 
   select(site, x, y)
 
 #Convert to sf object to match with ecoregion 
 site.sf <- st_as_sf(convertdata, coords=c("x", "y"), crs=5070) 
-site.sf
+
 
 #Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
 Calibombussites_ecoregions<-point.in.poly(site.sf, ecoregions) %>% as.data.frame()
-Calibombussites_ecoregions
+write.csv(Calibombussites_ecoregions, "./DataFrames/calibombussites_ecoregion.csv")
 ```
 #Make a pretty map 
 ```{r}
@@ -84,7 +83,7 @@ tm_shape(ecoregions) + tm_style("col_blind")+
 ## Add historical data from Leif's dataset
 # Filter by collection - ie. Bohart Collection to see if Robins 1983 paper matches these records
 ```{r}
-Leifdata<-read.csv("./BBNACalifornia.csv")
+Leifdata<-read.csv("./HistoricalBohartData/BBNACalifornia.csv")
 ## Make sure all is distinct 
 Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
 
@@ -127,7 +126,7 @@ head(convertallcomb)
 
 #Convert to sf object to match with ecoregion 
 site.sf.all <- st_as_sf(convertallcomb, coords=c("x", "y"), crs=5070) 
-site.sf.all
+
 
 #Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
 Allyears_ecoregion<-point.in.poly(site.sf.all, ecoregions) %>% as.data.frame()
@@ -141,18 +140,19 @@ Allyearseco<-Allyears_ecoregion %>% rename(Ecoregion=NA_L3NAME)
 # 1930-1959
 thirtyfifty<-Allyearseco %>% filter(between(year, 1930, 1959))
 print(paste("We have", nrow(thirtyfifty), "datapoints between 1930 and 1959"))
-
+write.csv(thirtyfifty, "./HistoricalBohartData/thirtyfifty.csv")
 # 1960-1989
 sixtyeighty<-Allyearseco %>% filter(between(year, 1960, 1989))
 print(paste("We have", nrow(sixtyeighty), "datapoints between 1960 and 1989"))
-
+write.csv(sixtyeighty, "./HistoricalBohartData/sixtyeighty.csv")
 # 2000-2019
 twothous<-Allyearseco %>% filter(between(year, 1990, 2019))
 print(paste("We have", nrow(twothous), "datapoints between 1990 and 2019"))
-
+write.csv(twothous, "./HistoricalBohartData/twothous.csv")
 #data pre 83
 Pre83_ecoregions<-Allyearseco %>% filter(year<="1983")
 print(paste("We have", nrow(Pre83_ecoregions), "datapoints before or in 1983"))
+write.csv(Pre83_ecoregions, "./HistoricalBohartData/Pre83_ecoregions.csv")
 ```
 
 
