@@ -178,7 +178,7 @@ write.csv(dataFINAL, "./DataFrames/dataFINAL.csv")
 ```{r}
 
 caliginosus<-dataFINAL %>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Verified.Bee.species.ID=="caliginosus") %>% mutate(PCal=((SpeciesAbundance/TotalAbundance)*100))
-
+caliginosus
 totalcollected<-caliginosus %>% mutate(totalcal=sum(SpeciesAbundance))
 
 print(paste("We collected 36 caliginosus across all sites" ))
@@ -211,8 +211,8 @@ print(paste("We sampled a mean of", AvgRichSite, "bee richness per site with a s
 
 #How many males did we collect total relative to females across all sites? 
 TotalSexCollected<-dataFINAL %>% select(sex.caste) %>% mutate(count=1) %>% group_by(sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, total)
-TotalSexCollected %>% mutate(RelativeAbundance=(total/sum(TotalSexCollected$total))*100)
-
+TotalSexCollected %>%mutate(RelativeAbundance=(total/sum(TotalSexCollected$total))*100)
+TotalSexCollected
 ggplot(TotalSexCollected, aes(x=sex.caste, y=total)) +geom_bar(stat="identity")
 
 #How many males did we collect per site? 
@@ -312,6 +312,12 @@ AllSiteRich<-All_Site %>% select(Site_Grouping, Ecoregion.1, SpeciesRichness, To
 
 #Table 2 Info 
 Table2<-AllSiteRich %>% select(Site_Grouping, Ecoregion.1, SpeciesRichness, TotalAbundance, SiteShannon) 
+Table2 %>% arrange(Ecoregion.1)
+
+
+print(paste("avg richness per site is", mean(AllSiteRich$SpeciesRichness), "with a standard error of", (sd(AllSiteRich$SpeciesRichness)/sqrt(17))))
+
+
 
 #Change Shannon to Integer 
 Table2$SiteShannon=as.numeric(Table2$SiteShannon)
@@ -345,7 +351,7 @@ write.csv(SuppTable, "./Tables/SuppTable.csv")
 We did not find any significant differences in community composition between ecoregions
 ```{r, width = 5, height = 5, dpi=600}
 # Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
-comm_matrix<-AllSpp[,9:ncol(AllSpp)] %>% as.matrix()
+comm_matrix<-AllSpp[,10:ncol(AllSpp)] %>% as.matrix()
 
 set.seed(123456)
 NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
