@@ -131,31 +131,28 @@ site.sf.all <- st_as_sf(convertallcomb, coords=c("x", "y"), crs=5070)
 
 
 #Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
-Allyears_ecoregion<-point.in.poly(site.sf.all, ecoregions) %>% as.data.frame()
-nrow(Allyears_ecoregion) 
+Allyears_ecoregion<-point.in.poly(site.sf.all, ecoregions) %>% as.data.frame() %>% rename(Ecoregion=NA_L3NAME)
+
+
+Calibombussites_ecoregions$NA_L3NAME %>% unique()
+#Filter so we only have ecoregions that were sampled in 2019
+SpeciesEco<-Allyears_ecoregion %>% filter(Ecoregion %in% c("Sierra Nevada", "Coastal Sage", "Coast Range", "Klamath", "Cascades", "Central Basin"))
+
+
+SpeciesEco<-SpeciesEco[!(is.na(SpeciesEco$species) | SpeciesEco$species==""), ]
+SpeciesEco %>% filter(Ecoregion=="Cascades")
+FinalEcos<-SpeciesEco %>% group_by(Ecoregion) %>% count(species) %>% mutate(count=1) %>% mutate(EcoRichness=sum(count)) %>% rename("Richness"=n) %>% select(Ecoregion, species, EcoRichness)
+
+FinalEcos
+
+
+
+
 ```
 
-#Subset historical datapoints by decade 
-```{r}
-Allyearseco<-Allyears_ecoregion %>% rename(Ecoregion=NA_L3NAME)
 
-# 1930-1959
-thirtyfifty<-Allyearseco %>% filter(between(year, 1930, 1959))
-print(paste("We have", nrow(thirtyfifty), "datapoints between 1930 and 1959"))
-write.csv(thirtyfifty, "./HistoricalBohartData/thirtyfifty.csv")
-# 1960-1989
-sixtyeighty<-Allyearseco %>% filter(between(year, 1960, 1989))
-print(paste("We have", nrow(sixtyeighty), "datapoints between 1960 and 1989"))
-write.csv(sixtyeighty, "./HistoricalBohartData/sixtyeighty.csv")
-# 2000-2019
-twothous<-Allyearseco %>% filter(between(year, 1990, 2019))
-print(paste("We have", nrow(twothous), "datapoints between 1990 and 2019"))
-write.csv(twothous, "./HistoricalBohartData/twothous.csv")
-#data pre 83
-Pre83_ecoregions<-Allyearseco %>% filter(year<="1983")
-print(paste("We have", nrow(Pre83_ecoregions), "datapoints before or in 1983"))
-write.csv(Pre83_ecoregions, "./HistoricalBohartData/Pre83_ecoregions.csv")
-```
+
+
 
 
 

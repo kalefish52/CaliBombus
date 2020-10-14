@@ -105,34 +105,9 @@ ggplot(plot, aes(x=Site_Grouping, y=TotalAbundance, fill=Date_comb))+
 ```
 
 
-#Filter data by number collected / sampling time 
-```{r, include=FALSE}
-#Filter based on having at least 110 individuals / site total 
-dataFILT110<-dataTOTAL %>% filter(TotalAbundance>=110)
-dataFILT110 %>% group_by(Site_Grouping)  %>% tally()
-print("There are 6 sites with at least 110 bees collected / site")
-dataFILT100<-dataTOTAL %>% filter(TotalAbundance>=100)
-dataFILT100 %>% group_by(Site_Grouping)%>% tally()
-print("There are 16 sites with at least 100 bees collected / site")
-head(dataTOTAL)
-#Filter based on each site having at least 105 individuals / sampling time 
-dataTIME105<-dataTIME %>% filter(TotalAbundance>=105)
-dataTIME105 %>% group_by(Site_Grouping) %>% tally()
-print("There are 8 sites with at least 105 bees collected / site / sampling time")
-dataTIME100<-dataTIME %>% filter(TotalAbundance>=100)
-dataTIME100 %>% group_by(Site_Grouping) %>% tally()
-print("There are 14 sites with at least 100 bees collected / site / sampling time")
-dataTIME80<-dataTIME %>% filter(TotalAbundance>=80)
-dataTIME80 %>% group_by(Site_Grouping) %>% tally()
-print("There are 17 sites with at least 80 bees collected / site / sampling time")
-
-
-```
-
-## Now that we have counts per site, filter out any extras based on site/time
-
+# Filter based on sampling time and date 
 ```{r, echo=FALSE}
-## First things first, filter any data we'll want to exclude based on site/time - 
+## Filter any data we'll want to exclude based on site/time - 
 # Chose one time per site based on which timepoint had greatest abundance
 ## We are currently considering:
   ## Oakhurst (OA: 104 in May, exclude June)
@@ -187,6 +162,8 @@ ggplot(caliginosus, aes(x=Site_Grouping, y=PCal)) + geom_bar(stat="identity") + 
 
 insularis<-dataFINAL%>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Site_Grouping=="insularis")
 
+flavidus<-dataFINAL %>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Verified.Bee.species.ID=="flavidus")
+flavidus
 
 ```
 
@@ -202,6 +179,12 @@ MinSite<-dataFINAL %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% su
 
 MaxSite<-dataFINAL %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(Min=max(TotalAbundance))
 
+# Total Richness per Site
+head(dataFINAL)
+
+FinalEcos<-dataFINAL %>% select(Ecoregion.1, Verified.Bee.species.ID) %>% group_by(Ecoregion.1) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(EcoRichness=sum(count)) %>% rename("Richness"=n) %>% select(!c(count,Richness))
+
+FinalEcos
 
 #What is the average richness per site?
 AvgRichSite<-dataFINAL %>% select(Site_Grouping, SpeciesRichness) %>% unique() %>% summarize(mean=mean(SpeciesRichness))
@@ -402,9 +385,9 @@ NextEco<-TotalEco %>% select(!EcoRich) %>% pivot_wider(names_from=Ecoregion.1, v
 
 str(NextEco)
 #Species Richness, Hill Number 1
-out<-iNEXT(NextEco, q=c(1), datatype="abundance", endpoint=1000)
-ggiNEXT(out, type=1) + theme_bw(base_size=10) 
-
+out<-iNEXT(NextEco, q=c(0), datatype="abundance", endpoint=1000)
+ggiNEXT(out, type=1) + theme_bw(base_size=10) + scale_y_continuous(breaks=pretty_breaks(), limits=c(0,12))
+out
 ggsave("./Figures/EcoregionRarefaction.png")
 ```
 
