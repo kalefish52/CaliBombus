@@ -86,18 +86,17 @@ tm_shape(ecoregions) + tm_style("col_blind")+
 Leifdata<-read.csv("./HistoricalBohartData/BBNACalifornia.csv")
 ## Make sure all is distinct 
 Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
+
+
 ```
 
 
 # Assign each one of Leif's datapoints to an Ecoregion using USGS Level III
 ```{r}
-
 AllYears<-Leifdata %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
-```
-
-```{r}
 
 
+Leifdata %>% filter(species=="impatiens")
 #Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
 COORDSall<-SpatialPoints(cbind(AllYears$longitude, AllYears$latitude), proj4string=CRS("+proj=longlat"))
 coordsall<-spTransform(COORDSall, CRS("+init=epsg:5070"))
@@ -126,7 +125,7 @@ SpeciesEco<-SpeciesEco[!(is.na(SpeciesEco$species) | SpeciesEco$species==""), ]
 SpeciesEco %>% filter(Ecoregion=="Cascades")
 FinalEcos<-SpeciesEco %>% group_by(Ecoregion) %>% count(species) %>% mutate(count=1) %>% mutate(EcoRichness=sum(count)) %>% rename("Richness"=n) %>% select(Ecoregion, species, EcoRichness)
 
-FinalEcos
+
 
 
 
