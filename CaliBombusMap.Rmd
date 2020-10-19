@@ -86,33 +86,16 @@ tm_shape(ecoregions) + tm_style("col_blind")+
 Leifdata<-read.csv("./HistoricalBohartData/BBNACalifornia.csv")
 ## Make sure all is distinct 
 Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
-
-
-Leifdata %>% filter(species=="suckleyi")
-
-#Get Thorp data (identified by R. Thorp)
-Robin<-Leifdata[grep("horp", Leifdata$det.by),] 
-Robin %>% filter(species=="rufocinctus")
-
-#Get J. Ascher data (identified by J. Ascher)
-Ascher<-Leifdata[grep("scher", Leifdata$det.by),] 
-
-#Get Bohart collection data - anyh remaining that Robin may have used 
-Bohart<-Leifdata[grep("ohart", Leifdata$Institution),] 
-
-#Combine all data and then make sure there are no duplicates 
-FullData<-rbind(Robin, Ascher, Bohart) %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
-
-Leifdata %>% filter(species=="suckleyi")
-print(paste("We have", nrow(FullData), "datapoints from Bohart, Thorp and Ascher"))
 ```
 
 
 # Assign each one of Leif's datapoints to an Ecoregion using USGS Level III
 ```{r}
 
-AllYears<-FullData %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
-print(paste("We removed", (nrow(FullData)-nrow(AllYears)), "datapoints that had NA coordinates"))
+AllYears<-Leifdata %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
+```
+
+```{r}
 
 
 #Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
