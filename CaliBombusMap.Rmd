@@ -86,7 +86,7 @@ tm_shape(ecoregions) + tm_style("col_blind")+
 Leifdata<-read.csv("./HistoricalBohartData/BBNACalifornia.csv")
 ## Make sure all is distinct 
 Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
-
+head(Leifdata)
 
 ```
 
