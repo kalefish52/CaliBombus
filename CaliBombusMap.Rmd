@@ -87,13 +87,86 @@ Leifdata<-read.csv("./HistoricalBohartData/BBNACalifornia.csv")
 ## Make sure all is distinct 
 Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
 head(Leifdata)
+Leifdata %>% dplyr::select(Institution) %>% unique()
+```
 
+```{r}
+York<-Leifdata %>% filter(grepl("York", Institution))
+nrow(York)
+PaulWilliams<-Leifdata %>% filter(grepl("Paul", Institution))
+nrow(PaulWilliams)
+Ontario<-Leifdata %>% filter(grepl("Ontario", Institution))
+Irwin<-Leifdata %>% filter(grepl("Irwin", Institution))
+nrow(Irwin)
+Ohio<-Leifdata %>% filter(grepl("Ohio", Institution))
+Riverside<-Leifdata %>% filter(grepl("Riverside", Institution))
+nrow(Riverside)
+NC<-Leifdata %>% filter(grepl("Carolina", Institution))
+nrow(NC)
+Illinois<-Leifdata %>% filter(grepl("Illinois", Institution))
+nrow(Illinois)
+Yale<-Leifdata %>% filter(grepl("Yale", Institution))
+Colorado<-Leifdata %>% filter(grepl("Colorado", Institution))
+nrow(Colorado)
+CAS<-Leifdata %>% filter(grepl("Academy", Institution))
+nrow(CAS)
+Penn<-Leifdata %>% filter(grepl("Penn", Institution))
+Bohart<-Leifdata %>% filter(grepl("Bohart", Institution))
+nrow(Bohart)
+American<-Leifdata %>% filter(grepl("AMNH", Institution))
+nrow(American)
+Cornell<-Leifdata %>% filter(grepl("Cornell", Institution))
+nrow(Cornell)
+Smithsonian<-Leifdata %>% filter(grepl("Smithsonian", Institution))
+nrow(Smithsonian)
+USDA<-Leifdata %>% filter(grepl("USDA", Institution))
+nrow(USDA)
+Snow<-Leifdata %>% filter(grepl("Snow", Institution))
+nrow(Snow)
+Harvard<-Leifdata %>% filter(grepl("Harvard", Institution))
+nrow(Harvard)
+Wisconsin<-Leifdata %>% filter(grepl("Wisconsin", Institution))
+nrow(Wisconsin)
+Field<-Leifdata %>% filter(grepl("Field", Institution))
+nrow(Field)
+Essig<-Leifdata %>% filter(grepl("Essig", Institution))
+nrow(Essig)
+LA<-Leifdata %>% filter(grepl("LACM", Institution))
+nrow(LA)
+UCSD<-Leifdata %>% filter(grepl("Diego", Institution))
+nrow(UCSD)
+Humboldt<-Leifdata %>% filter(grepl("Humboldt", Institution))
+nrow(Humboldt)
+Thomson<-Leifdata %>% filter(grepl("Thomson", Institution))
+nrow(Thomson)
+Florida<-Leifdata %>% filter(grepl("Florida", Institution))
+nrow(Florida)
+Texas<-Leifdata %>% filter(grepl("Texas", Institution))
+nrow(Texas)
+Occidental<-Leifdata %>% filter(grepl("Occidental", Institution))
+nrow(Occidental)
+ECOSUR<-Leifdata %>% filter(grepl("Colegio", Institution))
+nrow(ECOSUR)
+Bird<-Leifdata %>% filter(grepl("Bird", Institution))
+nrow(Bird)
+Neal<-Leifdata %>% filter(grepl("N. Williams", Institution))
+nrow(Neal)
+California<-Leifdata %>% filter(grepl("California State", Institution))
+nrow(California)
+UCSC<-Leifdata %>% filter(grepl("Santa Cruz", Institution))
+nrow(UCSC)
+
+FinalCollect<-rbind(York, PaulWilliams, Ontario, Irwin, Ohio, Riverside, NC, 
+                    Illinois, Yale, Colorado, CAS, Penn, Bohart, American, Cornell, Smithsonain,
+                    USDA, Snow, Harvard, Wisconsin, Field, Essig, LA, UCSD, Humboldt, Thomson, 
+                    Florida, Texas, Occidental, ECOSUR, Bird, Neal, California, UCSC)
+nrow(FinalCollect)
 ```
 
 
 # Assign each one of Leif's datapoints to an Ecoregion using USGS Level III
 ```{r}
-AllYears<-Leifdata %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
+AllYears<-FinalCollect %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
 
 
 Leifdata %>% filter(species=="impatiens")
@@ -126,7 +199,7 @@ SpeciesEco %>% filter(Ecoregion=="Cascades")
 FinalEcos<-SpeciesEco %>% group_by(Ecoregion) %>% count(species) %>% mutate(count=1) %>% mutate(EcoRichness=sum(count)) %>% rename("Richness"=n) %>% select(Ecoregion, species, EcoRichness)
 
 
-
+FinalEcos %>% filter(Ecoregion=="Sierra Nevada")
 
 
 
