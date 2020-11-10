@@ -275,49 +275,6 @@ TotalEco<-left_join(EcoregionData, EcoRich, by="Ecoregion.1")
 
 ```
 
-## Diversity, Richness Metrics by Ecoregion and by Site using Vegan 
-#Table 2 
-```{r, echo=FALSE}
-# Shannon's Diversity for Ecoregion level and Site Level 
-##Site Level 
-Shannonmatrix<-AllSpp %>% select(!c(Date_comb, SpeciesRichness, TotalAbundance, Ecoregion.1, Site_Grouping, coords.x1, coords.x2, Ecoregion, X))
-
-Matrix<-as.matrix(Shannonmatrix)
-SiteShannon<-diversity(Matrix, index="shannon") %>% as.vector()
-
-#Combine ShannonDiversity Values with Site Names 
-Site_Grouping<-AllSpp$Site_Grouping
-Site_Shannon<-cbind(Site_Grouping, SiteShannon)
-Site_Shannon<-as.data.frame(Site_Shannon)
-
-AllSiteRich<-All_Site %>% select(Site_Grouping, Ecoregion.1, SpeciesRichness, TotalAbundance, SiteShannon) %>% unique()
-
-
-#Table 2 Info 
-Table2<-AllSiteRich %>% select(Site_Grouping, Ecoregion.1, SpeciesRichness, TotalAbundance, SiteShannon) 
-Table2 %>% arrange(Ecoregion.1)
-
-
-print(paste("avg richness per site is", mean(AllSiteRich$SpeciesRichness), "with a standard error of", (sd(AllSiteRich$SpeciesRichness)/sqrt(17))))
-
-
-
-#Change Shannon to Integer 
-Table2$SiteShannon=as.numeric(Table2$SiteShannon)
-
-#Summarize average/sd richness, abundance, shannon - filter ecoregions with only one site
-T2Sums<-Table2 %>% 
-  group_by(Ecoregion.1) %>% 
-  mutate(meanrich=mean(SpeciesRichness)) %>% 
-  mutate(serich=(sd(SpeciesRichness)/sqrt(n()))) %>% 
-  mutate(meanabund=mean(TotalAbundance)) %>% 
-  mutate(seabund=(sd(TotalAbundance)/sqrt(n()))) %>% 
-  mutate(MeanShan=mean(SiteShannon)) %>% 
-  mutate(seshan=(sd(SiteShannon)/sqrt(n()))) %>% 
-  select(Ecoregion.1, meanrich, serich, meanabund, seabund, MeanShan, seshan) %>% unique()
-T2Sums
-write.csv(T2Sums, "./Tables/T2Sums.csv")
-```
 
 ## Supplementary Table 1 
 ```{r}
@@ -357,10 +314,10 @@ ano = anosim(comm_matrix, data.scores$Ecoregion, distance = "bray", permutations
 
 #No significant differences between ecoregions in community composition
 
-cols<-c("Cascades"="aquamarine4", 
-        "Sierra Nevada"="darkgoldenrod", 
-        "Central Basin"="darkgoldenrod4", 
-        "Klamath"="olivedrab", 
+cols<-c("Cascades"="darkgoldenrod4", 
+        "Sierra Nevada"="lightgoldenrod1", 
+        "Central Basin"="blueviolet", 
+        "Klamath"="orange", 
         "Coast Range"="plum4", 
         "Coastal Sage"="darkmagenta")
 
@@ -368,17 +325,17 @@ cols<-c("Cascades"="aquamarine4",
 NMDSplot<-ggplot() + 
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
   geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))+
-  scale_x_continuous(limits = c(-2.5, 2.5))+
+  scale_x_continuous(limits = c(-3, 3))+
   theme_bw()+scale_colour_manual(values=cols)+
-  theme_bw()+scale_y_continuous(limits=c(-2,1))
+  theme_bw()+scale_y_continuous(limits=c(-3,3))
 NMDSplot
 
 
-ggsave("./Figures/NMDS.png", width=7, height=6, dpi=600)
+ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
 
 ```
 
-## Species Accumulation Curves in iNEXT for each Ecoregion 
+# Species Accumulation Curves in iNEXT for each Ecoregion 
 
 ```{r}
 NextEco<-TotalEco %>% select(!EcoRich) %>% pivot_wider(names_from=Ecoregion.1, values_from=EcoAbund) %>% arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
@@ -411,7 +368,7 @@ ggiNEXT(out, type=1) + theme_bw(base_size=10)
 ggsave("./Figures/SiteRarefaction.png")
 ```
 
-## Rarefactions for Sierra Nevada
+### Rarefactions for Sierra Nevada
 ```{r, include=FALSE}
 library(scales)
 #Make dataframes for each ecoregion (6 total)
@@ -438,7 +395,7 @@ SN
 
 
 
-#Coastal Sage
+### Coastal Sage
 ```{r,  include=FALSE}
 TotalBreakdown
 NEXTSppCS<-dfeco %>% filter(Ecoregion.1 =="Coastal Sage") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
@@ -453,7 +410,7 @@ CS<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(
 ```
 
 
-#Coast Range
+### Coast Range
 ```{r, include=FALSE}
 NEXTSppCR<-dfeco %>% filter(Ecoregion.1=="Coast Range") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
@@ -465,7 +422,7 @@ CR<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(
 
 ```
 
-#Klamath
+### Klamath
 ```{r, include=FALSE}
 TotalBreakdown %>% select(Ecoregion, Ecoregion.1) %>% unique()
 NEXTSppK<-dfeco %>% filter(Ecoregion.1=="Klamath") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
@@ -480,7 +437,7 @@ K<-ggiNEXT(out, type=1) +theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(le
 
 ```
 
-#Cascades
+### Cascades
 ```{r, include=FALSE}
 NEXTSppC<-dfeco %>% filter(Ecoregion.1=="Cascades") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
@@ -493,7 +450,7 @@ C<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(l
 
 ```
 
-#CentralBasin
+### CentralBasin
 ```{r}
 NEXTSppCB<-dfeco %>% filter(Ecoregion.1=="Central Basin") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
   arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
