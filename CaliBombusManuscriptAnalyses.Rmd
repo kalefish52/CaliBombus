@@ -322,12 +322,24 @@ cols<-c("Cascades"="darkgoldenrod4",
         "Coastal Sage"="darkmagenta")
 
 
+# Hull data  
+E.klamath <- data.scores[data.scores$Ecoregion == "Klamath", ][chull(data.scores[data.scores$Ecoregion == "Klamath", c("NMDS1", "NMDS2")]), ]  
+E.coastsage <- data.scores[data.scores$Ecoregion == "Coastal Sage", ][chull(data.scores[data.scores$Ecoregion == "Coastal Sage", c("NMDS1", "NMDS2")]), ]  
+E.Sierra <- data.scores[data.scores$Ecoregion == "Sierra Nevada", ][chull(data.scores[data.scores$Ecoregion == "Sierra Nevada", c("NMDS1", "NMDS2")]), ]  
+E.coastrange <- data.scores[data.scores$Ecoregion == "Coast Range", ][chull(data.scores[data.scores$Ecoregion == "Coast Range", c("NMDS1", "NMDS2")]), ]  
+E.cascades <- data.scores[data.scores$Ecoregion == "Cascades", ][chull(data.scores[data.scores$Ecoregion == "Cascades", c("NMDS1", "NMDS2")]), ]  
+E.central <- data.scores[data.scores$Ecoregion == "Central Basin", ][chull(data.scores[data.scores$Ecoregion == "Central Basin", c("NMDS1", "NMDS2")]), ]  
+
+# Combine all ecoregions
+hull.data <- rbind(E.klamath, E.coastsage, E.Sierra, E.coastrange, E.cascades, E.central)  
+hull.data
+
 NMDSplot<-ggplot() + 
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
   geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))+
-  scale_x_continuous(limits = c(-3, 3))+
-  theme_bw()+scale_colour_manual(values=cols)+
-  theme_bw()+scale_y_continuous(limits=c(-3,3))
+  scale_x_continuous(limits = c(-4, 4))+
+  theme_bw()+scale_y_continuous(limits=c(-4,4)) +  
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=Ecoregion,group=Ecoregion),alpha=0.30)
 NMDSplot
 
 
