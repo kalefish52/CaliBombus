@@ -288,6 +288,7 @@ write.csv(SuppTable, "./Tables/SuppTable.csv")
 ```
 
 # NMDS - see if species change based on Ecoregion
+## Based on species counts 
 We did not find any significant differences in community composition between ecoregions
 ```{r, width = 5, height = 4, dpi=600}
 # Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
@@ -346,6 +347,49 @@ NMDSplot
 ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
 
 ```
+# NMDS - presence/absence 
+```{r}
+
+#Make presence/absence matrix 
+pamat<-AllSpp[,10:ncol(AllSpp)] 
+pamat[pamat>0]<-1
+
+# Run NMDS with pamat
+set.seed(123456)
+NMDS=metaMDS(pamat, k=2, distance="bray") 
+stressplot(NMDS)
+NMDS #Stress ok 
+
+#Get data scores and make new dataframe with site, ecoregion and collection date information
+data.scores<-as.data.frame(scores(NMDS))
+data.scores$date <- AllSpp$Date_comb
+data.scores$Site <-AllSpp$Site_Grouping
+data.scores$Ecoregion <-AllSpp$Ecoregion.1
+
+
+#Gets NMDS info for each behavior
+species.scores<-as.data.frame(scores(NMDS, "species"))
+species.scores$species<-rownames(species.scores)
+
+## Anosim - are communities different by ecoregion
+ano = anosim(pamat, data.scores$Ecoregion, distance = "bray", permutations = 9999)
+ano
+
+
+
+
+
+NMDSplot<-ggplot() + 
+  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
+  geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))+
+  scale_x_continuous(limits = c(-4, 4))+
+  theme_bw()+scale_y_continuous(limits=c(-4,4)) 
+NMDSplot
+
+
+
+```
+
 
 # Species Accumulation Curves in iNEXT for each Ecoregion 
 
