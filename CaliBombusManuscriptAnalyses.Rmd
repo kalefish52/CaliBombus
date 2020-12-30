@@ -336,12 +336,12 @@ hull.data <- rbind(E.klamath, E.coastsage, E.Sierra, E.coastrange, E.cascades, E
 hull.data
 
 NMDSplot<-ggplot() + 
-  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
-  geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))+
-  scale_x_continuous(limits = c(-4, 4))+
-  theme_bw()+scale_y_continuous(limits=c(-4,4)) +  
-  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=Ecoregion,group=Ecoregion),alpha=0.30)
-NMDSplot
+  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=1)+
+  geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), size=2.5, position=position_jitter(width=3, height=4))+
+  scale_x_continuous(limits = c(-3.5, 3.5)) +
+  theme_bw()+scale_y_continuous(limits=c(-3.5,3.5)) 
+
+  NMDSplot
 
 
 ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
@@ -377,13 +377,11 @@ ano
 
 
 
-
-
 NMDSplot<-ggplot() + 
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
   geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))+
-  scale_x_continuous(limits = c(-4, 4))+
-  theme_bw()+scale_y_continuous(limits=c(-4,4)) 
+  scale_x_continuous(limits = c(-2, 2))+
+  theme_bw()+scale_y_continuous(limits=c(-2,2)) 
 NMDSplot
 
 
