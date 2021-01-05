@@ -291,9 +291,31 @@ write.csv(SuppTable, "./Tables/SuppTable.csv")
 ## Based on species counts 
 We did not find any significant differences in community composition between ecoregions
 ```{r, width = 5, height = 4, dpi=600}
+# Change species names to abbreviations so graphs look nicer 
+names(AllSpp)
+AllSpp<-AllSpp %>% rename(
+  vos=vosnesenskii,
+  mel=melanopygus,
+  van=vandykei,
+  fer=fervidus,
+  cal=caliginosus,
+  fld=flavidus,
+  flf=flavifrons,
+  ruf=rufocinctus,
+  ins=insularis,
+  bif=bifarius,
+  hun=huntii,
+  kir=kirbiellus,
+  syl=sylvicola,
+  cen=centralis,
+  mix=mixtus,
+  gri=griseocollis,
+  app=appositus
+)
+
+
 # Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
 comm_matrix<-AllSpp[,10:ncol(AllSpp)] %>% as.matrix()
-
 set.seed(123456)
 NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
 stressplot(NMDS)
@@ -337,20 +359,22 @@ hull.data
 
 NMDSplot<-ggplot() + 
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=1)+
-  geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), size=2.5, position=position_jitter(width=3, height=4))+
-  scale_x_continuous(limits = c(-3.5, 3.5)) +
-  theme_bw()+scale_y_continuous(limits=c(-3.5,3.5)) 
+  geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), size=2.5, position=position_jitter(width=3, height=5))+
+  scale_colour_manual(values=cols)+
+  scale_x_continuous(limits = c(-5.5, 5.5)) +
+  theme_bw()+scale_y_continuous(limits=c(-5.5,5.5)) 
 
-  NMDSplot
+NMDSplot
 
 
 ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
 
 ```
+
 # NMDS - presence/absence 
 ```{r}
-
 #Make presence/absence matrix 
+AllSpp
 pamat<-AllSpp[,10:ncol(AllSpp)] 
 pamat[pamat>0]<-1
 
@@ -370,18 +394,42 @@ data.scores$Ecoregion <-AllSpp$Ecoregion.1
 #Gets NMDS info for each behavior
 species.scores<-as.data.frame(scores(NMDS, "species"))
 species.scores$species<-rownames(species.scores)
-
+data.scores
 ## Anosim - are communities different by ecoregion
 ano = anosim(pamat, data.scores$Ecoregion, distance = "bray", permutations = 9999)
 ano
 
+boops<-data.scores %>% mutate(category=case_when(
+  Ecoregion=="Klamath" ~ "mountain",
+  Ecoregion=="Sierra Nevada" ~ "mountain",
+  Ecoregion=="Cascades" ~ "mountain",
+  Ecoregion=="Coastal Sage" ~ "coast", 
+  Ecoregion=="Coast Range" ~ "coast", 
+  Ecoregion=="Central Basin" ~ "coast"
+))
+
+anotwo = anosim(pamat, boops$category, distance = "bray", permutations = 9999)
+anotwo
+
+## Test with anosim whether central basin is different from Coast Range and Coastal Sage -- its not different 
+test<-boops %>% 
+  filter(!Ecoregion %in% c("Klamath", 
+                           "Sierra Nevada", 
+                           "Cascades"))
+testmat<-AllSpp %>% filter(!Ecoregion.1 %in% c("Klamath", 
+                           "Sierra Nevada", 
+                           "Cascades"))
+
+smat<-testmat[,10:ncol(testmat)] 
+smat[smat>0]<-1
 
 
 NMDSplot<-ggplot() + 
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
-  geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species))+
-  scale_x_continuous(limits = c(-2, 2))+
-  theme_bw()+scale_y_continuous(limits=c(-2,2)) 
+  geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), size=2.5)+
+  scale_colour_manual(values=cols)+
+  scale_x_continuous(limits = c(-3, 3))+
+  theme_bw()+scale_y_continuous(limits=c(-3,3)) 
 NMDSplot
 
 
