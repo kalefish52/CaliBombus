@@ -172,6 +172,24 @@ ggsave("CasteRatios.png", dpi=600)
 
 ggsave("./Figures/CasteEcoregion.png")
 ```
+## Supplementary Table 1 
+```{r}
+dataDiv
+SuppTable<-dataDiv %>% select(Date_comb, 
+                                Site_Grouping,
+                                Verified.Bee.species.ID, 
+                                sex.caste, 
+                                Ecoregion.1,
+                                Floral.association..field.ID.) %>% 
+  rename("Date Collected"=Date_comb) %>% 
+  rename("Site"=Site_Grouping) %>% 
+  rename("Ecoregion"=Ecoregion.1)%>% 
+  rename("Floral Assocation"=Floral.association..field.ID.) %>% 
+  rename("Caste"=sex.caste) %>% 
+  rename("Species"=Verified.Bee.species.ID)
+ 
+write.csv(SuppTable, "./Tables/SuppTable1.csv")
+```
 
 ## Table 1 Information
 How many sites and regions had which species?? 
@@ -206,18 +224,11 @@ Finaldescript
 write.csv(Finaldescript, file="./Tables/SpeciesperSiteEcoregion.csv")
 ```
 
-## Transform data with species abundance for each site/ecoregion in order to do diversity statistics
+## Ecoregion Richness/Abundance
 Use AllSpp for all diversity analyses 
 ```{r, echo=FALSE}
 head(TotalBreakdown)
-##Site Level Numbers 
-AllSpp<-TotalBreakdown %>% unique() %>% pivot_wider(names_from = Verified.Bee.species.ID, values_from = SpeciesAbundance) %>% arrange(Site_Grouping)
-#Replace NAs with 0 
-AllSpp <- AllSpp %>% replace(is.na(.), 0)
-AllSpp
-
 ##Ecoregion level numbers
-
 EcoregionData<-TotalBreakdown %>% unique() %>%select(Ecoregion.1, Verified.Bee.species.ID, SpeciesAbundance) %>% group_by(Ecoregion.1, Verified.Bee.species.ID) %>% mutate(EcoAbund=sum(SpeciesAbundance)) %>% select(!SpeciesAbundance) %>% unique()
 
 EcoregionData %>% arrange(Ecoregion.1)
@@ -230,25 +241,14 @@ TotalEco<-left_join(EcoregionData, EcoRich, by="Ecoregion.1")
 
 ```
 
-
-## Supplementary Table 1 
+# Transform data - diversity compatible
 ```{r}
-dataFINAL
-SuppTable<-dataFINAL %>% select(Date_comb, 
-                                Site_Grouping,
-                                Verified.Bee.species.ID, 
-                                sex.caste, 
-                                Ecoregion.1,
-                                Floral.association..field.ID.) %>% 
-  rename("Date Collected"=Date_comb) %>% 
-  rename("Site"=Site_Grouping) %>% 
-  rename("Ecoregion"=Ecoregion.1)%>% 
-  rename("Floral Assocation"=Floral.association..field.ID.) %>% 
-  rename("Caste"=sex.caste) %>% 
-  rename("Species"=Verified.Bee.species.ID)
- 
-write.csv(SuppTable, "./Tables/SuppTable1.csv")
+AllSpp<-TotalBreakdown %>% unique() %>% pivot_wider(names_from = Verified.Bee.species.ID, values_from = SpeciesAbundance) %>% arrange(Site_Grouping)
+#Replace NAs with 0 
+AllSpp <- AllSpp %>% replace(is.na(.), 0)
+AllSpp
 ```
+
 
 # NMDS - see if species change based on Ecoregion
 ## Based on species counts 
@@ -278,7 +278,7 @@ AllSpp<-AllSpp %>% rename(
 
 
 # Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
-comm_matrix<-AllSpp[,10:ncol(AllSpp)] %>% as.matrix()
+comm_matrix<-AllSpp[,7:ncol(AllSpp)] %>% as.matrix()
 set.seed(123456)
 NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
 stressplot(NMDS)
@@ -328,8 +328,6 @@ NMDSplot<-ggplot() +
   theme_bw()+scale_y_continuous(limits=c(-5.5,5.5)) 
 
 NMDSplot
-
-
 ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
 
 ```
@@ -338,7 +336,7 @@ ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
 ```{r}
 #Make presence/absence matrix 
 AllSpp
-pamat<-AllSpp[,11:ncol(AllSpp)] 
+pamat<-AllSpp[,7:ncol(AllSpp)] 
 pamat[pamat>0]<-1
 
 # Run NMDS with pamat
@@ -387,16 +385,20 @@ smat<-testmat[,10:ncol(testmat)]
 smat[smat>0]<-1
 
 
-NMDSplot<-ggplot() + 
+NMDSplot2<-ggplot() + 
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
   geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), size=2.5)+
   scale_colour_manual(values=cols)+
-  scale_x_continuous(limits = c(-3, 3))+
-  theme_bw()+scale_y_continuous(limits=c(-3,3)) 
-NMDSplot
+  scale_x_continuous(limits = c(-1.5, 1.5))+
+  theme_bw()+scale_y_continuous(limits=c(-1.5,1.5)) 
+NMDSplot2
 
+# Combine NMDS plots and save 
+nmds<-ggarrange(NMDSplot, NMDSplot2, 
+            ncol=2, nrow=1, common.legend = TRUE, legend="right") 
+nmds
 
-
+ggsave("./Figures/NMDSGraphs.png", width=7, height=5, dpi=600)
 ```
 
 
@@ -417,8 +419,8 @@ ggsave("./Figures/EcoregionRarefaction.png")
 ```{r}
 #iNEXT package uses species by site dataframes
 #Transform data (opposite of vegan package) and make species names as row names instead of column 
-
-commatrix<-TotalBreakdown %>% select(!c(Date_comb, Ecoregion.1, TotalAbundance, SpeciesRichness,  Ecoregion, coords.x1, coords.x2, X)) %>% unique()
+head(TotalBreakdown)
+commatrix<-TotalBreakdown %>% select(!c(Date_comb, Ecoregion.1, TotalAbundance, SpeciesRichness,  Ecoregion)) %>% unique()
 
 NEXTSppALL<- commatrix%>% pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
 NEXTSppALL
@@ -439,7 +441,7 @@ library(scales)
 #Make dataframes for each ecoregion (6 total)
 #Make general dataframe that can then be filtered by ecoregion
 head(TotalBreakdown)
-dfeco<-TotalBreakdown %>% select(!c(Date_comb, TotalAbundance, SpeciesRichness,  Ecoregion, coords.x1, coords.x2, X)) %>% unique()
+dfeco<-TotalBreakdown %>% select(!c(Date_comb, TotalAbundance, SpeciesRichness,  Ecoregion)) %>% unique()
 
 #SierraNevada
 NEXTSppSN<-dfeco %>% filter(Ecoregion.1=="Sierra Nevada") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
@@ -469,9 +471,7 @@ NEXTSppCS<-dfeco %>% filter(Ecoregion.1 =="Coastal Sage") %>%  pivot_wider(names
 str(NEXTSppCS)
 out<-iNEXT(NEXTSppCS, q=c(0), datatype="abundance", endpoint=150)
 CS<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
- legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Coastal Sage") + scale_colour_manual(values="seagreen4") + scale_fill_manual(values="seagreen2")  +ylim(0,9)+geom_line(size = .3)+ scale_y_continuous(breaks=pretty_breaks(), limits=c(0,9))
-
-
+ legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Coastal Sage") + scale_colour_manual(values="seagreen4") + scale_fill_manual(values="seagreen2")  +ylim(0,9)+geom_line(size = .3)
 ```
 
 
@@ -483,8 +483,7 @@ NEXTSppCR<-dfeco %>% filter(Ecoregion.1=="Coast Range") %>%  pivot_wider(names_f
 str(NEXTSppCR)
 out<-iNEXT(NEXTSppCR, q=c(0), datatype="abundance", endpoint=150)
 CR<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
- legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Coast Range") + scale_colour_manual(values=c("darkorchid4", "aquamarine4", "hotpink4", "steelblue4")) + scale_fill_manual(values=c("thistle1", "cadetblue1", "thistle3", "lightsteelblue1")) +ylim(0,9)+geom_line(size = .3)+ scale_y_continuous(breaks=pretty_breaks(), limits=c(0,9))
-
+ legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Coast Range") + scale_colour_manual(values=c("darkorchid4", "aquamarine4", "hotpink4", "steelblue4")) + scale_fill_manual(values=c("thistle1", "cadetblue1", "thistle3", "lightsteelblue1")) +ylim(0,9)+geom_line(size = .3)
 ```
 
 ### Klamath
@@ -496,10 +495,7 @@ NEXTSppK
 str(NEXTSppK)
 out<-iNEXT(NEXTSppK, q=c(0), datatype="abundance", endpoint=150)
 K<-ggiNEXT(out, type=1) +theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
- legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Klamath Mountains")+ scale_colour_manual(values=c("deepskyblue4", "indianred4")) + scale_fill_manual(values=c("deepskyblue2", "indianred1")) +ylim(0,9)+geom_line(size = .3)+ scale_y_continuous(breaks=pretty_breaks(), limits=c(0,9))
-
-
-
+ legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Klamath Mountains")+ scale_colour_manual(values=c("deepskyblue4", "indianred4")) + scale_fill_manual(values=c("deepskyblue2", "indianred1")) +ylim(0,9)+geom_line(size = .3)
 ```
 
 ### Cascades
@@ -510,9 +506,7 @@ NEXTSppC
 str(NEXTSppC)
 out<-iNEXT(NEXTSppC, q=c(0), datatype="abundance", endpoint=150)
 C<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
- legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Cascades")+scale_colour_manual(values="navyblue") + scale_fill_manual(values="lightsteelblue2") +ylim(0,9)+geom_line(size = .3)+ scale_y_continuous(breaks=pretty_breaks(), limits=c(0,9))
-
-
+ legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Cascades")+scale_colour_manual(values="navyblue") + scale_fill_manual(values="lightsteelblue2") +ylim(0,9)+geom_line(size = .3)
 ```
 
 ### CentralBasin
@@ -524,15 +518,12 @@ str(NEXTSppCB)
 out<-iNEXT(NEXTSppCB, q=c(0), datatype="abundance", endpoint=150)
 CB<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Central Basin")+
-  scale_colour_manual(values="orangered3") + scale_fill_manual(values="orange1") +ylim(0,9)+geom_line(size = .3)+ scale_y_continuous(breaks=pretty_breaks(), limits=c(0,9))
-
+  scale_colour_manual(values="orangered3") + scale_fill_manual(values="orange1") +ylim(0,9)+geom_line(size = .3)
 
 
 rarefactions<-ggarrange(SN, CS, CR, K, C, CB, 
-            ncol=3, nrow=2) 
-
+            ncol=3, nrow=2)
+rarefactions
 ggsave("./Figures/SiteRarefactionGraphs.png", width=7, height=5, dpi=600)
-
-
 ```
 
