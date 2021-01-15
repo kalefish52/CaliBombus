@@ -297,35 +297,23 @@ species.scores$species<-rownames(species.scores)
 
 ## Anosim - are communities different by ecoregion
 ano = anosim(comm_matrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
-
+ano
 #No significant differences between ecoregions in community composition
 
-cols<-c("Cascades"="darkgoldenrod4", 
-        "Sierra Nevada"="lightgoldenrod1", 
-        "Central Basin"="blueviolet", 
-        "Klamath"="orange", 
-        "Coast Range"="plum4", 
-        "Coastal Sage"="darkmagenta")
+cols<-c("Cascades"="#542788", 
+        "Sierra Nevada"="#f1a340", 
+        "Central Basin"="#5ab4ac", 
+        "Klamath"="#4d9221", 
+        "Coast Range"="#c51b7d", 
+        "Coastal Sage"="#2166ac")
 
-
-# Hull data  
-E.klamath <- data.scores[data.scores$Ecoregion == "Klamath", ][chull(data.scores[data.scores$Ecoregion == "Klamath", c("NMDS1", "NMDS2")]), ]  
-E.coastsage <- data.scores[data.scores$Ecoregion == "Coastal Sage", ][chull(data.scores[data.scores$Ecoregion == "Coastal Sage", c("NMDS1", "NMDS2")]), ]  
-E.Sierra <- data.scores[data.scores$Ecoregion == "Sierra Nevada", ][chull(data.scores[data.scores$Ecoregion == "Sierra Nevada", c("NMDS1", "NMDS2")]), ]  
-E.coastrange <- data.scores[data.scores$Ecoregion == "Coast Range", ][chull(data.scores[data.scores$Ecoregion == "Coast Range", c("NMDS1", "NMDS2")]), ]  
-E.cascades <- data.scores[data.scores$Ecoregion == "Cascades", ][chull(data.scores[data.scores$Ecoregion == "Cascades", c("NMDS1", "NMDS2")]), ]  
-E.central <- data.scores[data.scores$Ecoregion == "Central Basin", ][chull(data.scores[data.scores$Ecoregion == "Central Basin", c("NMDS1", "NMDS2")]), ]  
-
-# Combine all ecoregions
-hull.data <- rbind(E.klamath, E.coastsage, E.Sierra, E.coastrange, E.cascades, E.central)  
-hull.data
 
 NMDSplot<-ggplot() + 
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=1)+
   geom_text(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), size=2.5, position=position_jitter(width=3, height=5))+
   scale_colour_manual(values=cols)+
-  scale_x_continuous(limits = c(-5.5, 5.5)) +
-  theme_bw()+scale_y_continuous(limits=c(-5.5,5.5)) 
+  scale_x_continuous(limits = c(-5.2, 5.2)) +
+  theme_bw()+scale_y_continuous(limits=c(-5.2,5.2)) 
 
 NMDSplot
 ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
@@ -335,7 +323,6 @@ ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
 # NMDS - presence/absence 
 ```{r}
 #Make presence/absence matrix 
-AllSpp
 pamat<-AllSpp[,7:ncol(AllSpp)] 
 pamat[pamat>0]<-1
 
@@ -384,8 +371,17 @@ testmat<-AllSpp %>% filter(!Ecoregion.1 %in% c("Klamath",
 smat<-testmat[,10:ncol(testmat)] 
 smat[smat>0]<-1
 
+## Add hulls to distinguish statistically significant groups 
+# Hull data  
+Mountains <- boops[boops$category == "mountain",][chull(boops[boops$category == "mountain", c("NMDS1", "NMDS2")]),]  
+Coast <- boops[boops$category == "coast", ][chull(boops[boops$category == "coast", c("NMDS1", "NMDS2")]), ]  
 
-NMDSplot2<-ggplot() + 
+# Combine all ecoregions
+hull.data <- rbind(Mountains, Coast)  
+
+
+NMDSplot2<-ggplot() +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2, fill=category, group=category),alpha=0.30)+
   geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=Ecoregion), size=2)+
   geom_text_repel(data=species.scores, aes(x=NMDS1, y=NMDS2, label=species), size=2.5)+
   scale_colour_manual(values=cols)+
@@ -398,7 +394,7 @@ nmds<-ggarrange(NMDSplot, NMDSplot2,
             ncol=2, nrow=1, common.legend = TRUE, legend="right") 
 nmds
 
-ggsave("./Figures/NMDSGraphs.png", width=7, height=5, dpi=600)
+ggsave("./Figures/NMDSGraphs.png", width=9, height=5, dpi=600)
 ```
 
 
