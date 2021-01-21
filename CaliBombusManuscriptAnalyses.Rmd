@@ -125,6 +125,15 @@ insularis<-dataDiv%>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verif
 flavidus<-dataDiv %>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Verified.Bee.species.ID=="flavidus")
 flavidus
 
+mountswhat<-dataDiv %>% filter(Ecoregion.1 %in% c("Klamath", "Sierra Nevada", "Cascades")) %>% select(Verified.Bee.species.ID) %>% unique()
+
+coastswhat<-dataDiv %>% filter(Ecoregion.1 %in% c("Coastal Sage", "Coast Range")) %>% select(Verified.Bee.species.ID) %>% unique()
+
+mountswhat
+coastswhat
+
+CB<-dataDiv %>% filter(Ecoregion.1 == "Central Basin") %>% select(Verified.Bee.species.ID) %>% unique()
+CB
 ```
 
 ## Descriptive Information for Mansucript- Site and Ecoregion Characteristics and Information 
@@ -358,6 +367,7 @@ boops<-data.scores %>% mutate(category=case_when(
   Ecoregion=="Central Basin" ~ "coast"
 ))
 
+boops
 anotwo = anosim(pamat, boops$category, distance = "bray", permutations = 9999)
 anotwo
 
@@ -418,7 +428,7 @@ NMDSplot2
 
 # Combine NMDS plots and save 
 nmds<-ggarrange(NMDSplot, NMDSplot2, 
-            ncol=2, nrow=1, common.legend = TRUE, legend="right") 
+            ncol=2, nrow=1, common.legend = TRUE, legend="right", labels=c("A", "B")) 
 nmds
 
 ggsave("./Figures/NMDSGraphs.png", width=9, height=5, dpi=600)
