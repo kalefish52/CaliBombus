@@ -100,6 +100,7 @@ speciesCOUNT<-speciesCOUNT %>% mutate(TotalAbundance=sum(SpeciesAbundance))
 #Use this data frame for sampling time specific questions
 dataDiv<-left_join(dataFINAL, speciesCOUNT, by=c("Site_Grouping", 
                                               "Verified.Bee.species.ID"))
+dataDiv %>% select(Ecoregion.1, Site_Grouping, SpeciesRichness) %>% unique() %>% arrange(desc(SpeciesRichness))
 
 #Visualize abundance at final sites 
 FinalSites <- dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique()
