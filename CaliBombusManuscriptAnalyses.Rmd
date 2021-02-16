@@ -142,6 +142,9 @@ CB
 #What is the average number of bees per site? 
 AvgMeanSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(mean=mean(TotalAbundance))
 
+SDSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(sd=sd(TotalAbundance))
+SDSite/sqrt(17)
+
 sdMeanSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(SD=sd(TotalAbundance))
 sdMeanSite/sqrt(17) # Standard error
 print(paste("We sampled a mean of", AvgMeanSite, "bees per site with a standard deviation of", sdMeanSite))
