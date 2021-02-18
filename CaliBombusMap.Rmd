@@ -35,18 +35,19 @@ st_crs(ecoregionshape) #sf package
 ##Recode variable names so they are shorter 
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Coast Range' = "Coast Range")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central Basin and Range' = "Central Basin")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Mojave Basin and Range' = "Mojave Basin Range")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Mojave Basin and Range' = "Mojave Basin")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sierra Nevada' = "Sierra Nevada")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'California Coastal Sage, Chaparral, and Oak Woodlands' = "Coastal Sage")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central California Valley' = "Central California Valley")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Central California Valley' = "Central Valley")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Klamath Mountains' = "Klamath")
-ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Southern and Baja California Pine-Oak Mountains' = "Southern California Mountains")
+ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Southern and Baja California Pine-Oak Mountains' = "SoCal Mountains")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Northern Basin and Range' = "Northern Basin")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Sonoran Desert' = "Sonoran Desert")
 ecoregionshape$NA_L3NAME<-recode(ecoregionshape$NA_L3NAME, 'Eastern Cascades Slopes and Foothills' = "Eastern Cascades")
 
 #Condense ecoregion to name and geometry (ie. coordinates)
 ecoregions<-ecoregionshape %>% select(NA_L3NAME, geometry)
+
 
 #Read in site gps coordinates
 site<-read.csv("./USGS_ecoregions20/spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat) 
@@ -77,6 +78,19 @@ tm_shape(ecoregions) + tm_style("col_blind")+
   tm_polygons(col="NA_L3NAME", border.col="white", palette="Dark2", title="Ecoregion")+
   tm_shape(site.sf) + tm_dots(size=0.2, col="black")+
  tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("right", "top"), outside=TRUE) 
+
+# Map with only caliginosus sites
+calisites<-site.sf %>% filter(site %in% c("HA", "SC",
+                                          "NC1",
+                                          "NC2",
+                                          "NC3"))
+
+tm_shape(ecoregions) + tm_style("col_blind")+
+  tm_polygons(col="NA_L3NAME", border.col="white", palette="Dark2", title="Ecoregion")+
+  tm_shape(calisites) + tm_dots(size=0.2, col="black")+
+ tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("right", "top"), outside=TRUE) 
+
+
 
 ```
 
