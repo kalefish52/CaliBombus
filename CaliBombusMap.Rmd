@@ -21,8 +21,7 @@ library(stringr)
 #Import data from EPA/USGS and CaliBombus
 ## Note: USGS is in a projected coordinate system and GPS coordinates are in a geographic coordinate system 
 ### It is best too use projected coordinate system for geospatial analyses
-I used the SF package, sp package and rgal package
-The SF transformation function wasn't changing the lat/long coordinates to xy 
+I used the sf package
 Also changed NA_L3Names so they are shorter 
 ```{r}
 #Import ecoregion shape file from EPA/USGS Level III 
@@ -52,23 +51,16 @@ ecoregions<-ecoregionshape %>% select(NA_L3NAME, geometry)
 #Read in site gps coordinates
 site<-read.csv("./USGS_ecoregions20/spatialinfofinal.csv") %>% select(Site_Grouping, lon, lat) 
 
-#Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
-cords<-SpatialPoints(cbind(site$lon, site$lat), proj4string=CRS("+proj=longlat"))
-coordscon<-spTransform(cords, CRS("+init=epsg:5070"))
+# Make sites into a spatial object
+cordSites<-st_as_sf(site, 
+                        coords = c("lon", "lat"),
+                        crs = st_crs("+proj=longlat"))
 
-#Transform to data frame and add site information 
-convertdata<-data.frame(coordscon) %>% cbind(site$Site_Grouping)%>% rename(site="site$Site_Grouping" ) %>% 
-  rename(x="coords.x1") %>% 
-  rename(y="coords.x2")
-convertdata<-convertdata %>% 
-  select(site, x, y)
-
-#Convert to sf object to match with ecoregion 
-site.sf <- st_as_sf(convertdata, coords=c("x", "y"), crs=5070) 
-
+#Convert lat/long data to same projection as USGS Ecoregions
+sites_Cali19<-st_transform(cordSites, crs=st_crs(ecoregionshape)) %>% rename(site= Site_Grouping)
 
 #Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
-Calibombussites_ecoregions<-point.in.poly(site.sf, ecoregions) %>% as.data.frame()
+Calibombussites_ecoregions<-point.in.poly(sites_Cali19, ecoregions) %>% as.data.frame()
 write.csv(Calibombussites_ecoregions, "./DataFrames/calibombussites_ecoregion.csv")
 ```
 #Make a pretty map 
@@ -76,7 +68,7 @@ write.csv(Calibombussites_ecoregions, "./DataFrames/calibombussites_ecoregion.cs
 #Map without labels
 tm_shape(ecoregions) + tm_style("col_blind")+
   tm_polygons(col="NA_L3NAME", border.col="white", palette="Dark2", title="Ecoregion")+
-  tm_shape(site.sf) + tm_dots(size=0.2, col="black")+
+  tm_shape(sites_Cali19) + tm_dots(size=0.2, col="black")+
  tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("right", "top"), outside=TRUE) 
 
 # Map with only caliginosus sites
@@ -103,7 +95,7 @@ Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep
 head(Leifdata)
 Leifdata %>% dplyr::select(Institution) %>% unique()
 ```
-
+# Select which records we will actually use - based on insititution they are from
 ```{r}
 York<-Leifdata %>% filter(grepl("York", Institution))
 nrow(York)
@@ -171,10 +163,11 @@ UCSC<-Leifdata %>% filter(grepl("Santa Cruz", Institution))
 nrow(UCSC)
 
 FinalCollect<-rbind(York, PaulWilliams, Ontario, Irwin, Ohio, Riverside, NC, 
-                    Illinois, Yale, Colorado, CAS, Penn, Bohart, American, Cornell, Smithsonain,
+                    Illinois, Yale, Colorado, CAS, Penn, Bohart, American, Cornell, Smithsonian,
                     USDA, Snow, Harvard, Wisconsin, Field, Essig, LA, UCSD, Humboldt, Thomson, 
                     Florida, Texas, Occidental, ECOSUR, Bird, Neal, California, UCSC)
-nrow(FinalCollect)
+print(paste("We used", nrow(FinalCollect), "records for the final analysis"))
+
 ```
 
 
@@ -197,7 +190,6 @@ head(convertallcomb)
 
 #Convert to sf object to match with ecoregion 
 site.sf.all <- st_as_sf(convertallcomb, coords=c("x", "y"), crs=5070) 
-
 
 #Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
 Allyears_ecoregion<-point.in.poly(site.sf.all, ecoregions) %>% as.data.frame() %>% rename(Ecoregion=NA_L3NAME)
