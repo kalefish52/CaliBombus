@@ -20,7 +20,7 @@ library(stringr)
 
 #Import data from EPA/USGS and CaliBombus
 ## Note: USGS is in a projected coordinate system and GPS coordinates are in a geographic coordinate system 
-### It is best too use projected coordinate system for geospatial analyses
+
 I used the sf package
 Also changed NA_L3Names so they are shorter 
 ```{r}
@@ -173,41 +173,58 @@ print(paste("We used", nrow(FinalCollect), "records for the final analysis"))
 
 # Assign each one of Leif's datapoints to an Ecoregion using USGS Level III
 ```{r}
-AllYears<-FinalCollect %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
+HistoricalBumbles<-FinalCollect %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
+
+# Make historical records into a spatial object
+cordHist<-st_as_sf(HistoricalBumbles, 
+                        coords = c("longitude", "latitude"),
+                        crs = st_crs("+proj=longlat"))
+
+#Convert lat/long data to same projection as USGS Ecoregions
+HistBumblesSp<-st_transform(cordHist, crs=st_crs(ecoregionshape)) 
+# Find species in each ecoregion 
+Allyears_ecoregion<-point.in.poly(HistBumblesSp, ecoregions) %>% as.data.frame() %>% rename(Ecoregion=NA_L3NAME)
 
 
-Leifdata %>% filter(species=="impatiens")
-#Convert lat/long data to epsg 5070 to match ecoregion projection in rgdal package
-COORDSall<-SpatialPoints(cbind(AllYears$longitude, AllYears$latitude), proj4string=CRS("+proj=longlat"))
-coordsall<-spTransform(COORDSall, CRS("+init=epsg:5070"))
-
-#Transform to data frame and add site information 
-convertall<-data.frame(coordsall) 
-convertallcomb<-cbind(convertall, AllYears) %>% 
-  rename(x="coords.x1") %>% 
-  rename(y="coords.x2")
-head(convertallcomb)
-
-#Convert to sf object to match with ecoregion 
-site.sf.all <- st_as_sf(convertallcomb, coords=c("x", "y"), crs=5070) 
-
-#Overlay gps points with ecoregion polygons to see which sites are in which ecoregions
-Allyears_ecoregion<-point.in.poly(site.sf.all, ecoregions) %>% as.data.frame() %>% rename(Ecoregion=NA_L3NAME)
-
-
-Calibombussites_ecoregions$NA_L3NAME %>% unique()
 #Filter so we only have ecoregions that were sampled in 2019
 SpeciesEco<-Allyears_ecoregion %>% filter(Ecoregion %in% c("Sierra Nevada", "Coastal Sage", "Coast Range", "Klamath", "Cascades", "Central Basin"))
 
 
 SpeciesEco<-SpeciesEco[!(is.na(SpeciesEco$species) | SpeciesEco$species==""), ]
 SpeciesEco %>% filter(Ecoregion=="Cascades")
+
+# How many species were historically in each ecoregion? 
 FinalEcos<-SpeciesEco %>% group_by(Ecoregion) %>% count(species) %>% mutate(count=1) %>% mutate(EcoRichness=sum(count)) %>% rename("Richness"=n) %>% select(Ecoregion, species, EcoRichness)
 
 
 FinalEcos %>% filter(Ecoregion=="Sierra Nevada")
+```
 
+# Comparison between historical and modern dataset
+```{r}
+#Make shapefiles with 5, 10, 20km  radii around each site 
+ModSites5k <- st_buffer(sites_Cali19, dist = 5000)
+ModSites10k <- st_buffer(sites_Cali19, dist = 10000)
+ModSites20k <- st_buffer(sites_Cali19, dist = 20000)
 
+#See how many bees were present historically in these radii
+## Within 5k 
+BeesatSites5kHist<-point.in.poly(HistBumblesSp, ModSites5k) %>% as.data.frame() 
+# Remove site nas because the bee records are not in those site radii
+BeesatSites5kHistf<-BeesatSites5kHist %>% filter(site != "NA")
+print(paste("There are", nrow(BeesatSites5kHistf), "bees found historically within 5 km of all of our sites"))
+
+## Within 10k 
+BeesatSites5kHist<-point.in.poly(HistBumblesSp, ModSites10k) %>% as.data.frame() 
+# Remove site nas because the bee records are not in those site radii
+BeesatSites10kHistf<-BeesatSites5kHist %>% filter(site != "NA")
+print(paste("There are", nrow(BeesatSites10kHistf), "bees found historically within 10 km of all of our sites"))
+
+## Within 20k 
+BeesatSites20kHist<-point.in.poly(HistBumblesSp, ModSites20k) %>% as.data.frame() 
+# Remove site nas because the bee records are not in those site radii
+BeesatSites20kHistf<-BeesatSites20kHist %>% filter(site != "NA")
+print(paste("There are", nrow(BeesatSites20kHistf), "bees found historically within 20 km of all of our sites"))
 
 ```
 
