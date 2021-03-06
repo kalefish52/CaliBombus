@@ -1,6 +1,8 @@
 ---
 title: "CaliBombus Spatial"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 #Load Packages
@@ -23,7 +25,7 @@ library(stringr)
 
 I used the sf package
 Also changed NA_L3Names so they are shorter 
-```{r}
+```{r, include=FALSE}
 #Import ecoregion shape file from EPA/USGS Level III 
 ecoregionshape<-st_read("./USGS_ecoregions20/ca_eco_l3.shp") #sf package
 #Check coordinate reference system 
@@ -70,33 +72,18 @@ tm_shape(ecoregions) + tm_style("col_blind")+
   tm_polygons(col="NA_L3NAME", border.col="white", palette="Dark2", title="Ecoregion")+
   tm_shape(sites_Cali19) + tm_dots(size=0.2, col="black")+
  tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("right", "top"), outside=TRUE) 
-
-# Map with only caliginosus sites
-calisites<-site.sf %>% filter(site %in% c("HA", "SC",
-                                          "NC1",
-                                          "NC2",
-                                          "NC3"))
-
-tm_shape(ecoregions) + tm_style("col_blind")+
-  tm_polygons(col="NA_L3NAME", border.col="white", palette="Dark2", title="Ecoregion")+
-  tm_shape(calisites) + tm_dots(size=0.2, col="black")+
- tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("right", "top"), outside=TRUE) 
-
-
-
 ```
 
 ## Add historical data from Leif's dataset
-# Filter by collection - ie. Bohart Collection to see if Robins 1983 paper matches these records
-```{r}
+
+```{r, include=FALSE}
 Leifdata<-read.csv("./HistoricalBohartData/BBNACalifornia.csv")
 ## Make sure all is distinct 
 Leifdata<-Leifdata %>% distinct(location, date, species, caste, observers, .keep_all=TRUE) 
-head(Leifdata)
 Leifdata %>% dplyr::select(Institution) %>% unique()
 ```
 # Select which records we will actually use - based on insititution they are from
-```{r}
+```{r, include=FALSE}
 York<-Leifdata %>% filter(grepl("York", Institution))
 nrow(York)
 PaulWilliams<-Leifdata %>% filter(grepl("Paul", Institution))
@@ -172,7 +159,7 @@ print(paste("We used", nrow(FinalCollect), "records for the final analysis"))
 
 
 # Assign each one of Leif's datapoints to an Ecoregion using USGS Level III
-```{r}
+```{r, include=FALSE}
 HistoricalBumbles<-FinalCollect %>% select(BBNA.code, species, sex, month, year, longitude, latitude) %>% na.omit()
 
 # Make historical records into a spatial object
@@ -201,6 +188,7 @@ FinalEcos %>% filter(Ecoregion=="Sierra Nevada")
 ```
 
 # Comparison between historical and modern dataset
+Draw 5, 10 and 20k radii around each site and see which historical records are there.
 ```{r}
 #Make shapefiles with 5, 10, 20km  radii around each site 
 ModSites5k <- st_buffer(sites_Cali19, dist = 5000)
@@ -233,12 +221,110 @@ print(paste("There are", nrow(BeesatSites20kHistf), "bees found historically wit
 min(BeesatSites20kHistf$year)
 max(BeesatSites20kHistf$year)
 ```
-## Separate historical pre and post 2000 for 10k and 20k
+
+## 10k Separate historical pre and post 2000 
 ```{r}
+# Past 10 years (only have records up until 2011)
 Post2000_10k<-BeesatSites10kHistf %>% filter(year >= 2000)
 nrow(Post2000_10k)
+
+# 10 years prior to 2000 (1989-2000)
+Pre2000_10k<-BeesatSites10kHistf %>% filter(year < 2000 & year > 1989)
+nrow(Pre2000_10k)
+
+# Abundance (# records) Post
+head(Post2000_10k)
+samples_10K_Post2000<-Post2000_10k %>% group_by(site) %>% mutate(count=1) %>% 
+  mutate(abundance=sum(count)) %>% select(site, abundance) %>% unique() %>% mutate(years="2000-2011")
+
+# Abundance (# records) Pre
+samples_10K_Pre2000<-Pre2000_10k %>% group_by(site) %>% mutate(count=1) %>% 
+  mutate(abundance=sum(count)) %>% select(site, abundance) %>% unique() %>% mutate(years="1989-1999")
+
+# Combine pre and post 
+AbundanceHist10<-rbind(samples_10K_Post2000, samples_10K_Pre2000)
+
+AbundGraph10<-ggplot(AbundanceHist10, aes(x=site, y=abundance, fill=years)) + geom_bar(stat="identity", position=position_dodge()) +ggtitle("Number of Records within 10km of each Site")+ theme(axis.text.x  = element_text(angle=90))
+AbundGraph10
+
+# Richness Post
+head(Post2000_10k)
+samplesrich_10K_Post2000<-Post2000_10k %>% group_by(site, species) %>% mutate(count=1) %>% 
+  mutate(speciesabund=sum(count)) %>% select(site, speciesabund) %>% unique() %>% ungroup() %>% group_by(site) %>% mutate(count=1) %>% mutate(richness=sum(count)) %>% select(site, richness) %>% unique() %>% mutate(years="2000-2011")
+
+# Richness Pre 
+samplesrich_10K_Pre2000<-Pre2000_10k %>% group_by(site, species) %>% mutate(count=1) %>% 
+  mutate(speciesabund=sum(count)) %>% select(site, speciesabund) %>% unique() %>% ungroup() %>% group_by(site) %>% mutate(count=1) %>% mutate(richness=sum(count)) %>% select(site, species, richness) %>% mutate(years="1989-1999")
+samplesrich_10K_Pre2000
+
+# Combine 
+RichnessHist10<-rbind(samplesrich_10K_Post2000, samplesrich_10K_Pre2000)
+
+#Graph
+RichGraph10<-ggplot(RichnessHist10, aes(x=site, y=richness, fill=years)) + geom_bar(stat="identity", position=position_dodge()) +ggtitle("Richness of Areas within 10km of each Site")+ theme(axis.text.x  = element_text(angle=90))
+RichGraph10
 ```
 
+## 20k Separate historical pre and post 2000 
+```{r}
+# Past 10 years (only have records up until 2011)
+Post2000_20k<-BeesatSites20kHistf %>% filter(year >= 2000)
+nrow(Post2000_20k)
+
+# 10 years prior to 2000 (1989-2000)
+Pre2000_20k<-BeesatSites20kHistf %>% filter(year < 2000 & year > 1989)
+nrow(Pre2000_20k)
+
+# Abundance (# records) Post
+samples_20K_Post2000<-Post2000_20k %>% group_by(site) %>% mutate(count=1) %>% 
+  mutate(abundance=sum(count)) %>% select(site, abundance) %>% unique() %>% mutate(years="2000-2011")
+
+# Abundance (# records) Pre
+samples_20K_Pre2000<-Pre2000_20k %>% group_by(site) %>% mutate(count=1) %>% 
+  mutate(abundance=sum(count)) %>% select(site, abundance) %>% unique() %>% mutate(years="1989-1999")
+
+# Combine pre and post 
+AbundanceHist20<-rbind(samples_20K_Post2000, samples_20K_Pre2000)
+
+AbundGraph20<-ggplot(AbundanceHist20, aes(x=site, y=abundance, fill=years)) + geom_bar(stat="identity", position=position_dodge()) +ggtitle("Number of Records within 20km of each Site")+ theme(axis.text.x  = element_text(angle=90))
+AbundGraph20
+
+# Richness Post
+head(Post2000_20k)
+samplesrich_20K_Post2000<-Post2000_20k %>% group_by(site, species) %>% mutate(count=1) %>% 
+  mutate(speciesabund=sum(count)) %>% select(site, speciesabund) %>% unique() %>% ungroup() %>% group_by(site) %>% mutate(count=1) %>% mutate(richness=sum(count)) %>% select(site, richness) %>% unique() %>% mutate(years="2000-2011")
+
+# Richness Pre 
+samplesrich_20K_Pre2000<-Pre2000_20k %>% group_by(site, species) %>% mutate(count=1) %>% 
+  mutate(speciesabund=sum(count)) %>% select(site, speciesabund) %>% unique() %>% ungroup() %>% group_by(site) %>% mutate(count=1) %>% mutate(richness=sum(count)) %>% select(site, species, richness) %>% mutate(years="1989-1999")
+
+# Combine 
+RichnessHist20<-rbind(samplesrich_20K_Post2000, samplesrich_20K_Pre2000)
+
+#Graph
+RichGraph20<-ggplot(RichnessHist20, aes(x=site, y=richness, fill=years)) + geom_bar(stat="identity", position=position_dodge()) +ggtitle("Richness of Areas within 20km of each Site")+ theme(axis.text.x  = element_text(angle=90))
+RichGraph20
+```
+
+## 10K Pre 1983
+```{r}
+Pre1983_10k<-BeesatSites10kHistf %>% filter(year <= 1983)
+nrow(Pre1983_10k)
+# Abundance at each site
+samples_10K_Pre1983<-Pre1983_10k %>% group_by(site) %>% mutate(count=1) %>% 
+  mutate(abundance=sum(count)) %>% select(site, abundance) %>% unique() 
+
+AbundGraph83<-ggplot(samples_10K_Pre1983, aes(x=site, y=abundance)) + geom_bar(stat="identity", position=position_dodge()) +ggtitle("Number of Records within 10km of each Site Collected Before 1983")+ theme(axis.text.x  = element_text(angle=90))
+AbundGraph83
+
+#richness 
+samplesrich_10K_Pre1983<-Pre1983_10k %>% group_by(site, species) %>% mutate(count=1) %>% 
+  mutate(speciesabund=sum(count)) %>% select(site, speciesabund) %>% unique() %>% ungroup() %>% group_by(site) %>% mutate(count=1) %>% mutate(richness=sum(count)) %>% select(site, species, richness) 
+samplesrich_10K_Pre1983
+
+RichGraph83<-ggplot(samplesrich_10K_Pre1983, aes(x=site, y=richness)) + geom_bar(stat="identity", position=position_dodge()) +ggtitle("Richness of Areas within 10km of each Site Collected Before 1983")+ theme(axis.text.x  = element_text(angle=90))
+RichGraph83
+```
 
 
 
