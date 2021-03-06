@@ -213,6 +213,8 @@ BeesatSites5kHist<-point.in.poly(HistBumblesSp, ModSites5k) %>% as.data.frame()
 # Remove site nas because the bee records are not in those site radii
 BeesatSites5kHistf<-BeesatSites5kHist %>% filter(site != "NA")
 print(paste("There are", nrow(BeesatSites5kHistf), "bees found historically within 5 km of all of our sites"))
+min(BeesatSites5kHistf$year)
+max(BeesatSites5kHistf$year)
 
 ## Within 10k 
 BeesatSites5kHist<-point.in.poly(HistBumblesSp, ModSites10k) %>% as.data.frame() 
@@ -220,12 +222,21 @@ BeesatSites5kHist<-point.in.poly(HistBumblesSp, ModSites10k) %>% as.data.frame()
 BeesatSites10kHistf<-BeesatSites5kHist %>% filter(site != "NA")
 print(paste("There are", nrow(BeesatSites10kHistf), "bees found historically within 10 km of all of our sites"))
 
+min(BeesatSites10kHistf$year)
+max(BeesatSites10kHistf$year)
+
 ## Within 20k 
 BeesatSites20kHist<-point.in.poly(HistBumblesSp, ModSites20k) %>% as.data.frame() 
 # Remove site nas because the bee records are not in those site radii
 BeesatSites20kHistf<-BeesatSites20kHist %>% filter(site != "NA")
 print(paste("There are", nrow(BeesatSites20kHistf), "bees found historically within 20 km of all of our sites"))
-
+min(BeesatSites20kHistf$year)
+max(BeesatSites20kHistf$year)
+```
+## Separate historical pre and post 2000 for 10k and 20k
+```{r}
+Post2000_10k<-BeesatSites10kHistf %>% filter(year >= 2000)
+nrow(Post2000_10k)
 ```
 
 
