@@ -74,7 +74,7 @@ tm_shape(ecoregions) + tm_style("col_blind")+
  tm_layout(frame=FALSE, legend.text.size=0.7, legend.width=1)+tm_legend(legend.position=c("right", "top"), outside=TRUE) 
 ```
 
-## Add historical data from Leif's dataset
+# Add historical data from Leif's dataset
 
 ```{r, include=FALSE}
 Leifdata<-read.csv("./HistoricalBohartData/BBNACalifornia.csv")
@@ -178,14 +178,26 @@ SpeciesEco<-Allyears_ecoregion %>% filter(Ecoregion %in% c("Sierra Nevada", "Coa
 
 
 SpeciesEco<-SpeciesEco[!(is.na(SpeciesEco$species) | SpeciesEco$species==""), ]
-SpeciesEco %>% filter(Ecoregion=="Cascades")
+
 
 # How many species were historically in each ecoregion? 
 FinalEcos<-SpeciesEco %>% group_by(Ecoregion) %>% count(species) %>% mutate(count=1) %>% mutate(EcoRichness=sum(count)) %>% rename("Richness"=n) %>% select(Ecoregion, species, EcoRichness)
 
+# How many records do we have for each ecoregion?
+EcoHist<-SpeciesEco %>% group_by(Ecoregion) %>% mutate(count=1) %>% mutate(EcoRecords=sum(count)) 
 
-FinalEcos %>% filter(Ecoregion=="Sierra Nevada")
+TotalRecords<-EcoHist%>% select(Ecoregion, EcoRecords) %>% unique()
+TotalRecords
+
+ggplot(TotalRecords, aes(x=Ecoregion, y=EcoRecords)) + geom_bar(stat="identity", position=position_dodge()) +ggtitle("Number of Historical Records in Each Ecoregion")+ theme(axis.text.x  = element_text(angle=90))
+
 ```
+
+## Separate Historical Records by Year via Ecoregion 
+```{r}
+
+```
+
 
 # Comparison between historical and modern dataset
 Draw 5, 10 and 20k radii around each site and see which historical records are there.
