@@ -22,9 +22,8 @@ library(ggpubr)
 
 ```
 
-#Load all data and filter
+#Load all data and transform/filter 
 ##Filter out non-Bombus samples
-##Select relevant data columns for downstream analyses 
 ```{r, include=FALSE}
 data<-read.csv("../CaliBombus/CaliBombus_inventory_main.csv")
 
@@ -35,8 +34,8 @@ head(dataALL)
 
 ```
 
-# Filter Sites
-## Combine dates that are within 3 days of each other -  This was done in inventory manually - do not run 
+## Filter Sites
+Combine dates that are within 3 days of each other -  This was done in inventory manually - do not run 
 ```{r, include=FALSE}
 
 #Combine sampling times for sites that were collected within 3 days of each other - this was done manually 
@@ -72,7 +71,7 @@ dataFinal<-dataFinal %>%
   mutate(Verified.Bee.species.ID=recode(Verified.Bee.species.ID, californicus="fervidus")) %>% mutate(sex.caste=recode(sex.caste, female="worker")) 
 ```
 
-# Add USGS Ecoregion Info to each site 
+## Add USGS Ecoregion Info to each site 
 ```{r, include=FALSE }
 Calibombussites_ecoregions<-read.csv("./DataFrames/calibombussites_ecoregion.csv")
 #Remove previously assigned ecoregion from dataFinal
@@ -87,7 +86,16 @@ head(dataFINAL)
 write.csv(dataFINAL, "./DataFrames/dataFINAL.csv")
 ```
 
-# Plant Associations 
+## Consolidate site info (Elevation, Lat, Long) for sites that were combined
+SC, GB, WC, SM, NC2
+```{r}
+dataFINAL<-dataFINAL %>% group_by(Site_Grouping) %>% 
+  mutate(ElevationComb=mean(Elevation_ft)) %>% mutate(LatComb=mean(Latitude)) %>% 
+  mutate(LongComb=mean(Longitude))
+```
+
+
+## Rename plant associations
 Consolidate plant names - Recode names to plant genus
 ```{r}
 # Vicia (Vetch)
@@ -178,9 +186,80 @@ dataFINAL[dataFINAL$Floral.association..field.ID. == "Acmispon_glaber?", "Floral
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Eurybia_radulina", "Floral.association..field.ID."] <- "Eurybia"
 ```
 
-# Diversity Metrics
-## Site Richness/Abundance 
+
+## Select relevant columns and rename
 ```{r}
+# Select columns of interest
+DataMetrics<-dataFINAL[c("Site_Grouping", 
+                    "Verified.Bee.species.ID",
+                    "Date_comb",
+                    "sex.caste",
+                    "LatComb",
+                    "LongComb",
+                    "ElevationComb",
+                    "Floral.association..field.ID.",
+                    "Ecoregion.1")] 
+
+# Rename columns to make easier for downstream analysis
+names(DataMetrics)[names(DataMetrics) == 'Site_Grouping']<-"Site"
+names(DataMetrics)[names(DataMetrics) == 'Verified.Bee.species.ID']<-"BeeSpecies"
+names(DataMetrics)[names(DataMetrics) == 'Floral.association..field.ID.']<-"FloralAssociation"
+names(DataMetrics)[names(DataMetrics) == 'Ecoregion.1']<-"Ecoregion"
+names(DataMetrics)[names(DataMetrics) == 'Date_comb']<-"Date"
+names(DataMetrics)[names(DataMetrics) == 'ElevationComb']<-"Elevation"
+names(DataMetrics)[names(DataMetrics) == 'LatComb']<-"Latitude"
+names(DataMetrics)[names(DataMetrics) == 'LongComb']<-"Longitude"
+```
+
+# Diversity and Richness Metrics 
+## Make a dataframe - alpha, with diversity, abundance and richness for each site
+```{r}
+# Add values to each site so we know how many individuals were collected at each site
+DataSiteNums <- DataMetrics %>% dplyr::group_by(Site, BeeSpecies) %>%
+  mutate(count=1) %>% 
+  mutate(speciescount=sum(count)) %>% 
+  dplyr::select(!count) 
+
+# Make dataframe with just species and site info
+SiteSpecies<-DataSiteNums[c("Site", "BeeSpecies", "speciescount")] %>% unique()
+
+# Make dataframe with site characteristics 
+SiteEnvs<-DataSiteNums[c("Site", "Date",
+                         "Ecoregion", "Latitude", 
+                         "Longitude", "Elevation")] %>% unique()
+
+# Make into a matrix (site by species table)
+DataSiteMatrix<-SiteSpecies %>% pivot_wider(names_from=BeeSpecies,
+              values_from=speciescount) %>% 
+  replace(is.na(.), 0)
+
+# Remove first column 
+DataSiteMatrix<-DataSiteMatrix[,2:ncol(DataSiteMatrix)] %>% as.matrix()
+
+# Calculate shannon diversity and richness per site for using Vegan
+H<-diversity(DataSiteMatrix)
+
+# Calculate richness per site
+Richness<-specnumber(DataSiteMatrix)
+
+# Abundance per site 
+Abundance<-rowSums(DataSiteMatrix)
+
+# Combine with site data 
+Alpha<-cbind(SiteEnvs, Diversity=H, Richness=Richness, SiteAbund=Abundance)
+```
+
+
+
+
+
+```{r}
+
+DataMetrics %>% select(Site, FloralAssociation, Ecoregion) %>% unique()
+
+
+# Transform dataframe for diversity metrics 
+DataMatrix<-
 # Calculate abundance and richness for each site
 speciesCOUNT<-dataFINAL %>% group_by(Site_Grouping) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
 
