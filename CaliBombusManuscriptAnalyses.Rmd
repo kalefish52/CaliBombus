@@ -87,6 +87,97 @@ head(dataFINAL)
 write.csv(dataFINAL, "./DataFrames/dataFINAL.csv")
 ```
 
+# Plant Associations 
+Consolidate plant names - Recode names to plant genus
+```{r}
+# Vicia (Vetch)
+dataFINAL[dataFINAL$Floral.association..field.ID. == "vetch", "Floral.association..field.ID."] <- "Vicia"
+# Lupinus
+dataFINAL$Floral.association..field.ID.[grepl("upi", dataFINAL$Floral.association..field.ID.)]<-"Lupinus"
+# Trifolium
+dataFINAL$Floral.association..field.ID.[grepl("ifolium", dataFINAL$Floral.association..field.ID.)]<-"Trifolium"
+# Jewel Flower
+dataFINAL[dataFINAL$Floral.association..field.ID. == "jewelflower", "Floral.association..field.ID."] <- "Streptanthus"
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Solanum sp.", "Floral.association..field.ID."] <- "Solanum"
+# Sage
+dataFINAL$Floral.association..field.ID.[grepl("sage", dataFINAL$Floral.association..field.ID.)]<-"Salvia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "foxglove", "Floral.association..field.ID."] <- "Digitalis"
+
+dataFINAL$Floral.association..field.ID.[grepl("geranium", dataFINAL$Floral.association..field.ID.)]<-"Geranium"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "lavendar", "Floral.association..field.ID."] <- "Lavendula"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "begonia", "Floral.association..field.ID."] <- "Begonia"
+
+# Rosemary is in the genus Salvia
+dataFINAL[dataFINAL$Floral.association..field.ID. == "rosemary", "Floral.association..field.ID."] <- "Salvia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "raspberry", "Floral.association..field.ID."] <- "Rubus"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "blackberry", "Floral.association..field.ID."] <- "Rubus"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Eriodictyon californicum", "Floral.association..field.ID."] <- "Eriodictyon"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Mertensia?", "Floral.association..field.ID."] <- "Mertensia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Melilotus (sweet clover)", "Floral.association..field.ID."] <- "Melilotus"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Sidalcea oregana (mallow)", "Floral.association..field.ID."] <- "Sidalcea"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "mint", "Floral.association..field.ID."] <- "Mentha"
+
+dataFINAL$Floral.association..field.ID.[grepl("ster", dataFINAL$Floral.association..field.ID.)]<-"Aster"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "coffeeberry", "Floral.association..field.ID."] <- "Frangula"
+
+dataFINAL$Floral.association..field.ID.[grepl("enstemon", dataFINAL$Floral.association..field.ID.)]<-"Penstemon"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Hastingsia alba (bistort?)", "Floral.association..field.ID."] <- "Hastingsia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Apiaceae (small carrot-like)", "Floral.association..field.ID."] <- "Apiaceae"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Monardella odoratissima", "Floral.association..field.ID."] <- "Monardella"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Hypericum perforatum (St. John's wort)", "Floral.association..field.ID."] <- "Hypericum"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Cirsium sp. (thistle)", "Floral.association..field.ID."] <- "Cirsium"
+
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Lewisia glandulosa", "Floral.association..field.ID."] <- "Lewisia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Pyrrocoma apargioides", "Floral.association..field.ID."] <- "Pyrrocoma"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Castilleja nana", "Floral.association..field.ID."] <- "Castilleja"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Ivesia lycopodioides var skandalaris", "Floral.association..field.ID."] <- "Ivesia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Agoseris_apargioides", "Floral.association..field.ID."] <- "Agoseris"
+
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Lotus_uliginosus", "Floral.association..field.ID."] <- "Lotus"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Grindelia_stricta", "Floral.association..field.ID."] <- "Grindelia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Cichorium_intybus", "Floral.association..field.ID."] <- "Cichorium"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Rubus_armeniacus", "Floral.association..field.ID."] <- "Rubus"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Delphinium_glaucum", "Floral.association..field.ID."] <- "Delphinium"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Senecio_serra", "Floral.association..field.ID."] <- "Senecio"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Aquilegia formosa", "Floral.association..field.ID."] <- "Aquilegia"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Erigeron_divergens?", "Floral.association..field.ID."] <- "Erigeron"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Agastache_urticifolia", "Floral.association..field.ID."] <- "Agastache"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Acmispon_glaber?", "Floral.association..field.ID."] <- "Acmispon"
+
+dataFINAL[dataFINAL$Floral.association..field.ID. == "Eurybia_radulina", "Floral.association..field.ID."] <- "Eurybia"
+```
+
 # Diversity Metrics
 ## Site Richness/Abundance 
 ```{r}
