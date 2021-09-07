@@ -327,20 +327,16 @@ casteeco
 ggsave("./Figures/CasteEco.png")
 ```
 ## Supplementary Table 1 
+Make a table with all info about bees for future reference
 ```{r}
-dataDiv
-SuppTable<-dataDiv %>% select(Date_comb, 
-                                Site_Grouping,
-                                Verified.Bee.species.ID, 
-                                sex.caste, 
-                                Ecoregion.1,
-                                Floral.association..field.ID.) %>% 
-  rename("Date Collected"=Date_comb) %>% 
-  rename("Site"=Site_Grouping) %>% 
-  rename("Ecoregion"=Ecoregion.1)%>% 
-  rename("Floral Assocation"=Floral.association..field.ID.) %>% 
-  rename("Caste"=sex.caste) %>% 
-  rename("Species"=Verified.Bee.species.ID)
+names(TotalDataInfo)
+# Remove diversity data 
+SuppTable<-TotalDataInfo[,!names(TotalDataInfo) %in% c("speciescount",
+                                           "Diversity",
+                                           "Richness",
+                                           "SiteAbund")]
+names(SuppTable)[names(SuppTable)=='sex.caste']<-"caste"
+
  
 write.csv(SuppTable, "./Tables/SuppTable1.csv")
 ```
