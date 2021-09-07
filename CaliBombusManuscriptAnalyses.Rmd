@@ -204,8 +204,8 @@ names(DataMetrics)[names(DataMetrics) == 'LatComb']<-"Latitude"
 names(DataMetrics)[names(DataMetrics) == 'LongComb']<-"Longitude"
 ```
 
-# Diversity and Richness Metrics 
-## Make a dataframe - alpha, with diversity, abundance and richness for each site
+# Alpha Dataframe
+## Diversity, Richness, Abundance for each Site 
 ```{r}
 # Add values to each site so we know how many individuals were collected at each site
 DataSiteNums <- DataMetrics %>% dplyr::group_by(Site, BeeSpecies) %>%
@@ -242,110 +242,89 @@ Abundance<-rowSums(DataSiteMatrix)
 Alpha<-cbind(SiteEnvs, Diversity=H, Richness=Richness, SiteAbund=Abundance)
 ```
 
-
-
+## Alpha plots
+Basic summary information about diversity, richness and abundance at each site
 ```{r}
+head(Alpha)
+#Richness
+RichnessPlot<-Alpha %>% ggplot(aes(x=Site, y=Richness)) + 
+  geom_bar(stat="identity") + ggtitle("Richness at each Site")
+RichnessPlot
+#Abundance
+AbundancePlot<-Alpha %>% ggplot(aes(x=Site, y=SiteAbund)) + 
+  geom_bar(stat="identity") + ggtitle("Abundance at each Site")
+AbundancePlot
+#Diversity
+DiversityPlot<-Alpha %>% ggplot(aes(x=Site, y=Diversity)) + 
+  geom_bar(stat="identity") + ggtitle("Diversity (H) at each Site")
+DiversityPlot
 
-DataMetrics %>% select(Site, FloralAssociation, Ecoregion) %>% unique()
+print(paste("The minimum number of bees at a site is", min(Alpha$SiteAbund), "and the the max number of bees at a site is", max(Alpha$SiteAbund)))
 
-
-# Transform dataframe for diversity metrics 
-DataMatrix<-
-# Calculate abundance and richness for each site
-speciesCOUNT<-dataFINAL %>% group_by(Site_Grouping) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(SpeciesRichness=sum(count)) %>% rename("SpeciesAbundance"=n) 
-
-#Add Total Abundance column(total number of bombus/site)
-speciesCOUNT<-speciesCOUNT %>% mutate(TotalAbundance=sum(SpeciesAbundance))
-
-#Merge richness/abundance info with site characteristics by Site_Grouping
-#Use this data frame for sampling time specific questions
-dataDiv<-left_join(dataFINAL, speciesCOUNT, by=c("Site_Grouping", 
-                                              "Verified.Bee.species.ID"))
-dataDiv %>% select(Ecoregion.1, Site_Grouping, SpeciesRichness) %>% unique() %>% arrange(desc(SpeciesRichness))
-
-#Visualize abundance at final sites 
-FinalSites <- dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique()
-FinalSites %>% ggplot(aes(x=Site_Grouping, y=TotalAbundance))+
-  geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90))
-
-print(paste("The minimum number of bees at a site is", min(FinalSites$TotalAbundance), "and the the max number of bees at a site is", max(FinalSites$TotalAbundance)))
+# Add abund, rich, diversity to DataSiteNums dataframe
+Alpha_use<-Alpha %>% dplyr::select(Site, Diversity, Richness, SiteAbund)
+TotalDataInfo<-left_join(DataSiteNums, Alpha_use, by="Site")
 ```
-## Species summary - How many specific individuals (species) do we have? 
+# Summary Stats for Manuscript
+## Species summary 
+How many specific individuals (species) do we have? 
 ```{r}
-caliginosus<-dataDiv %>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Verified.Bee.species.ID=="caliginosus") %>% mutate(PCal=((SpeciesAbundance/TotalAbundance)*100))
-caliginosus
-totalcollected<-caliginosus %>% mutate(totalcal=sum(SpeciesAbundance))
-totalcollected
-print(paste("We collected 36 caliginosus across all sites" ))
+names(TotalDataInfo)
+# Caliginosus prevalence at sites 
+caliginosus<-TotalDataInfo %>% 
+  select(Site, Ecoregion, speciescount, BeeSpecies, SiteAbund) %>% unique() %>% 
+  filter(BeeSpecies=="caliginosus") %>% 
+  mutate(perccali=((speciescount/SiteAbund)*100))
 
-ggplot(caliginosus, aes(x=Site_Grouping, y=PCal)) + geom_bar(stat="identity") + ggtitle("Percentage caliginosus at each site")
+ggplot(caliginosus, aes(x=Site, y=perccali)) + geom_bar(stat="identity") + ggtitle("Percentage caliginosus at each site")
 
-insularis<-dataDiv%>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Site_Grouping=="insularis")
+insularis<-TotalDataInfo %>% 
+  select(Site, Ecoregion, speciescount, BeeSpecies, SiteAbund) %>% unique() %>% 
+  filter(BeeSpecies=="insularis") %>% 
+  mutate(perccali=((speciescount/SiteAbund)*100))
+ggplot(insularis, aes(x=Site, y=perccali)) + geom_bar(stat="identity") + ggtitle("Percentage insularis at each site")
 
-flavidus<-dataDiv %>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Verified.Bee.species.ID=="flavidus")
-flavidus
-
-mountswhat<-dataDiv %>% filter(Ecoregion.1 %in% c("Klamath", "Sierra Nevada", "Cascades")) %>% select(Verified.Bee.species.ID) %>% unique()
-
-coastswhat<-dataDiv %>% filter(Ecoregion.1 %in% c("Coastal Sage", "Coast Range")) %>% select(Verified.Bee.species.ID) %>% unique()
-
-mountswhat
-coastswhat
-
-CB<-dataDiv %>% filter(Ecoregion.1 == "Central Basin") %>% select(Verified.Bee.species.ID) %>% unique()
-CB
+flavidus<-TotalDataInfo %>% 
+  select(Site, Ecoregion, speciescount, BeeSpecies, SiteAbund) %>% unique() %>% 
+  filter(BeeSpecies=="flavidus") %>% 
+  mutate(perccali=((speciescount/SiteAbund)*100))
+ggplot(flavidus, aes(x=Site, y=perccali)) + geom_bar(stat="identity") + ggtitle("Percentage flavidus at each site")
 ```
 
-## Descriptive Information for Mansucript- Site and Ecoregion Characteristics and Information 
+##Distribution of males, queens, workers
 ```{r, echo=FALSE}
-#What is the average number of bees per site? 
-AvgMeanSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(mean=mean(TotalAbundance))
-
-SDSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(sd=sd(TotalAbundance))
-SDSite/sqrt(17)
-
-sdMeanSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(SD=sd(TotalAbundance))
-sdMeanSite/sqrt(17) # Standard error
-print(paste("We sampled a mean of", AvgMeanSite, "bees per site with a standard deviation of", sdMeanSite))
-#What is the min/max number of bees per site? 
-MinSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(Min=min(TotalAbundance))
-MinSite
-MaxSite<-dataDiv %>% select(Site_Grouping, TotalAbundance) %>% unique() %>% summarize(Min=max(TotalAbundance))
-MaxSite
-
-# Total Richness per Site
-head(dataDiv)
-FinalEcos<-dataDiv %>% select(Ecoregion.1, Verified.Bee.species.ID) %>% group_by(Ecoregion.1) %>% count(Verified.Bee.species.ID) %>% mutate(count=1) %>% mutate(EcoRichness=sum(count)) %>% rename("Richness"=n) %>% select(!c(count,Richness))
-
-FinalEcos
-
-#What is the average richness per site?
-AvgRichSite<-dataDiv %>% select(Site_Grouping, SpeciesRichness) %>% unique() %>% summarize(mean=mean(SpeciesRichness))
-sdRichSite<-dataDiv %>% select(Site_Grouping, SpeciesRichness) %>% unique() %>% summarize(SD=sd(SpeciesRichness))
-print(paste("We sampled a mean of", AvgRichSite, "bee richness per site with a standard deviation of", sdRichSite))
-
-#How many males did we collect total relative to females across all sites? 
-TotalSexCollected<-dataDiv %>% select(sex.caste) %>% mutate(count=1) %>% group_by(sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, total)
-TotalSexCollected %>%mutate(RelativeAbundance=(total/sum(TotalSexCollected$total))*100)
-TotalSexCollected
-ggplot(TotalSexCollected, aes(x=sex.caste, y=total)) +geom_bar(stat="identity")
-
-#How many males did we collect per site? 
-SiteSex<-dataDiv %>% select(sex.caste, Site_Grouping) %>% mutate(count=1) %>%  group_by(Site_Grouping, sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, Site_Grouping, total) 
-ggplot(SiteSex, aes(x=Site_Grouping, y=total, fill=sex.caste)) +geom_bar(stat="identity")
-
+# Proportion of each caste per site 
+castedatasite<-aggregate(SiteAbund~Site+sex.caste,
+                     data=TotalDataInfo,
+                     FUN=length)
+# Plot 
+castesite<-ggplot(castedatasite, aes(x=Site, y=SiteAbund, fill=sex.caste)) +
+    geom_bar(stat="identity") + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
+castesite
 ggsave("./Figures/CasteSite.png")
 
-#How many males did we collect per ecoregion? 
-SiteEcoregion<-dataDiv %>% select(sex.caste, Ecoregion.1) %>% mutate(count=1) %>%  group_by(Ecoregion.1, sex.caste) %>% mutate(total=sum(count)) %>% unique() %>% select(sex.caste, Ecoregion.1, total) 
-SiteEcoregion %>% group_by(Ecoregion.1) %>% mutate(totinds=sum(total)) %>% ungroup() %>%  
-  mutate(propcaste=total/totinds)
+# Calculate number of castes per ecoregion
+castedataeco<-aggregate(SiteAbund~Ecoregion+sex.caste,
+                     data=TotalDataInfo,
+                     FUN=length)
+names(castedataeco)[names(castedataeco)=='SiteAbund']<-"CasteEcoAbund"
+# Summarize castes per ecoregion to get total number of individuals per ecoregion 
+EcoNums<-aggregate(SiteAbund~Ecoregion,
+          data=castedataeco,
+          FUN=sum)
+names(EcoNums)[names(EcoNums)=='SiteAbund']<-"TotalEcoAbund"
 
+# Combine EcoNums and castedataecos
+EcoInfo<-left_join(castedataeco, EcoNums, by="Ecoregion")
 
-ggplot(SiteEcoregion, aes(x=Ecoregion.1, y=total, fill=sex.caste)) +geom_bar(stat="identity")+xlab("Ecoregion")+ylab("Number Bees Collected")
-ggsave("CasteRatios.png", dpi=600)
+# Add column for percentage of ecoregion per caste
+EcoInfo$CasteProp <- EcoInfo$CasteEcoAbund/EcoInfo$TotalEcoAbund
 
-ggsave("./Figures/CasteEcoregion.png")
+# Graph proportions
+casteeco<-ggplot(EcoInfo, aes(x=Ecoregion, y=CasteEcoAbund, fill=sex.caste)) +
+    geom_bar(stat="identity") + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=12)) + labs(y="# Individuals", fill="Caste")
+casteeco
+ggsave("./Figures/CasteEco.png")
 ```
 ## Supplementary Table 1 
 ```{r}
