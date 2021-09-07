@@ -27,11 +27,8 @@ library(ggpubr)
 ```{r, include=FALSE}
 data<-read.csv("../CaliBombus/CaliBombus_inventory_main.csv")
 
-head(data)
-# Filter out non-bees and select relevant columns 
+# Filter out non-bees and select relevant columns for downstream analysis
 dataALL <- data %>% filter(!Verified.Bee.species.ID %in% c("", "NA - Andrena?", "NA - Anthophorid", "NA - Anthophorid?", "NA - fly (bumble mimic)", "NA - nonBombus", "NA - Osmia?", "NA - robber fly", "NA - Xylocopa")) %>% select(Bee.Unique.ID, Date_comb, Date_reformat, Locality_reformat, Latitude, Longitude, Site_Grouping, Ecoregion, Elevation_ft, County, Collector, Verified.Bee.species.ID, sex.caste, Floral.association..field.ID.)
-head(dataALL)
-
 ```
 
 ## Filter Sites
@@ -94,7 +91,6 @@ dataFINAL<-dataFINAL %>% group_by(Site_Grouping) %>%
   mutate(LongComb=mean(Longitude))
 ```
 
-
 ## Rename plant associations
 Consolidate plant names - Recode names to plant genus
 ```{r}
@@ -151,7 +147,6 @@ dataFINAL[dataFINAL$Floral.association..field.ID. == "Hypericum perforatum (St. 
 
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Cirsium sp. (thistle)", "Floral.association..field.ID."] <- "Cirsium"
 
-
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Lewisia glandulosa", "Floral.association..field.ID."] <- "Lewisia"
 
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Pyrrocoma apargioides", "Floral.association..field.ID."] <- "Pyrrocoma"
@@ -161,7 +156,6 @@ dataFINAL[dataFINAL$Floral.association..field.ID. == "Castilleja nana", "Floral.
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Ivesia lycopodioides var skandalaris", "Floral.association..field.ID."] <- "Ivesia"
 
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Agoseris_apargioides", "Floral.association..field.ID."] <- "Agoseris"
-
 
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Lotus_uliginosus", "Floral.association..field.ID."] <- "Lotus"
 
@@ -185,7 +179,6 @@ dataFINAL[dataFINAL$Floral.association..field.ID. == "Acmispon_glaber?", "Floral
 
 dataFINAL[dataFINAL$Floral.association..field.ID. == "Eurybia_radulina", "Floral.association..field.ID."] <- "Eurybia"
 ```
-
 
 ## Select relevant columns and rename
 ```{r}
@@ -251,8 +244,6 @@ Alpha<-cbind(SiteEnvs, Diversity=H, Richness=Richness, SiteAbund=Abundance)
 
 
 
-
-
 ```{r}
 
 DataMetrics %>% select(Site, FloralAssociation, Ecoregion) %>% unique()
@@ -279,8 +270,6 @@ FinalSites %>% ggplot(aes(x=Site_Grouping, y=TotalAbundance))+
 
 print(paste("The minimum number of bees at a site is", min(FinalSites$TotalAbundance), "and the the max number of bees at a site is", max(FinalSites$TotalAbundance)))
 ```
-
-
 ## Species summary - How many specific individuals (species) do we have? 
 ```{r}
 caliginosus<-dataDiv %>% select(Site_Grouping, Ecoregion.1, SpeciesAbundance, Verified.Bee.species.ID, TotalAbundance) %>% unique() %>% filter(Verified.Bee.species.ID=="caliginosus") %>% mutate(PCal=((SpeciesAbundance/TotalAbundance)*100))
