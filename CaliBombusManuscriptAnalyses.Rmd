@@ -490,112 +490,148 @@ nmds<-ggarrange(NMDSplot, NMDSplot2,
 ggsave("./Figures/NMDSGraphs.png", width=9, height=5, dpi=600)
 ```
 
-## Species Accumulation Curves in iNEXT for each site 
+# Species Accumulation Curves in iNEXT for each site 
 ```{r}
 #iNEXT package uses species by site dataframes
 #Transform data (opposite of vegan package) and make species names as row names instead of column 
-head(TotalBreakdown)
-commatrix<-TotalBreakdown %>% select(!c(Date_comb, Ecoregion.1, TotalAbundance, SpeciesRichness,  Ecoregion)) %>% unique()
+head(SiteSpecies)
 
-NEXTSppALL<- commatrix%>% pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
-NEXTSppALL
+RareMatrix<-SiteSpecies %>% pivot_wider(names_from=Site,
+              values_from=speciescount) %>% 
+  replace(is.na(.), 0) %>% column_to_rownames(var="BeeSpecies")
 
 #Rarefactions for all ecoregions in one graph 
-str(NEXTSppALL)
+str(RareMatrix)
 #Species Richness, Hill Number 1
-out<-iNEXT(NEXTSppALL, q=c(0), datatype="abundance", endpoint=150)
+out<-iNEXT(RareMatrix, q=c(0), datatype="abundance", endpoint=150)
 
 ggiNEXT(out, type=1) + theme_bw(base_size=10)
 
 ggsave("./Figures/SiteRarefaction.png")
+
+# Make dataframe for individual ecoregion rarefactions
+EcoRares<-TotalDataInfo[,c("Site", "BeeSpecies", 
+                           "speciescount",
+                           "Ecoregion")]
 ```
 
-### Rarefactions for Sierra Nevada
+## Ecoregion Rarefactions
+### Sierra Nevada
 ```{r, include=FALSE}
 library(scales)
-#Make dataframes for each ecoregion (6 total)
-#Make general dataframe that can then be filtered by ecoregion
-head(TotalBreakdown)
-dfeco<-TotalBreakdown %>% select(!c(Date_comb, TotalAbundance, SpeciesRichness,  Ecoregion)) %>% unique()
+# Filter to Sierra Sites and make rarefaction dataframe
+SierraRare<-subset(EcoRares, Ecoregion == "Sierra Nevada") %>% unique() %>%
+  pivot_wider(names_from = Site, values_from =speciescount) %>% 
+  replace(is.na(.), 0) %>% column_to_rownames(var="BeeSpecies")
+# Remove ecoregion column 
+SierraRare<-SierraRare[,!names(SierraRare)=="Ecoregion"]
 
-#SierraNevada
-NEXTSppSN<-dfeco %>% filter(Ecoregion.1=="Sierra Nevada") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
-  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
+# Rarefaction
+str(SierraRare)
+out<-iNEXT(SierraRare, q=c(0), datatype="abundance", endpoint=150)
 
-str(NEXTSppSN)
-out<-iNEXT(NEXTSppSN, q=c(0), datatype="abundance", endpoint=150)
-
+# Plot 
 SN<-ggiNEXT(out, type=1)+
   theme_bw(base_size=10)+
   guides(linetype=FALSE)+ 
   theme(legend.position = "bottom",legend.title=element_blank(),text=element_text(size=8),
         plot.title=element_text(size=10), legend.key.size = unit(0.5, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Sierra Nevada")+geom_line(size = .3) + scale_y_continuous(breaks=pretty_breaks(), limits=c(0,9))
-  
-SN
-
 ```
-
-
 
 ### Coastal Sage
 ```{r,  include=FALSE}
-TotalBreakdown
-NEXTSppCS<-dfeco %>% filter(Ecoregion.1 =="Coastal Sage") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
-  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
+# Filter to Coastal Sage Sites and make rarefaction dataframe
+CosSageRare<-subset(EcoRares, Ecoregion == "Coastal Sage") %>% unique() %>%
+  pivot_wider(names_from = Site, values_from =speciescount) %>% 
+  replace(is.na(.), 0) %>% column_to_rownames(var="BeeSpecies")
+# Remove ecoregion column 
+CosSageRare<-CosSageRare[,!names(CosSageRare)=="Ecoregion"]
 
-str(NEXTSppCS)
-out<-iNEXT(NEXTSppCS, q=c(0), datatype="abundance", endpoint=150)
+# Rarefaction
+str(CosSageRare)
+out<-iNEXT(CosSageRare, q=c(0), datatype="abundance", endpoint=150)
+
+# Plot
 CS<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Coastal Sage") + scale_colour_manual(values="seagreen4") + scale_fill_manual(values="seagreen2")  +ylim(0,9)+geom_line(size = .3)
 ```
 
-
 ### Coast Range
 ```{r, include=FALSE}
-NEXTSppCR<-dfeco %>% filter(Ecoregion.1=="Coast Range") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
-  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
+# Filter to Coast Range Sites and make rarefaction dataframe
+CosRanRare<-subset(EcoRares, Ecoregion == "Coast Range") %>% unique() %>%
+  pivot_wider(names_from = Site, values_from =speciescount) %>% 
+  replace(is.na(.), 0) %>% column_to_rownames(var="BeeSpecies")
+# Remove ecoregion column 
+CosRanRare<-CosRanRare[,!names(CosRanRare)=="Ecoregion"]
 
-str(NEXTSppCR)
-out<-iNEXT(NEXTSppCR, q=c(0), datatype="abundance", endpoint=150)
+# Rarefaction
+str(CosRanRare)
+out<-iNEXT(CosRanRare, q=c(0), datatype="abundance", endpoint=150)
+
+# Plot
 CR<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Coast Range") + scale_colour_manual(values=c("darkorchid4", "aquamarine4", "hotpink4", "steelblue4")) + scale_fill_manual(values=c("thistle1", "cadetblue1", "thistle3", "lightsteelblue1")) +ylim(0,9)+geom_line(size = .3)
 ```
 
 ### Klamath
 ```{r, include=FALSE}
-TotalBreakdown %>% select(Ecoregion, Ecoregion.1) %>% unique()
-NEXTSppK<-dfeco %>% filter(Ecoregion.1=="Klamath") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
-  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
-NEXTSppK
-str(NEXTSppK)
-out<-iNEXT(NEXTSppK, q=c(0), datatype="abundance", endpoint=150)
+# Filter to Klamath Sites and make rarefaction dataframe
+KlamRare<-subset(EcoRares, Ecoregion == "Klamath") %>% unique() %>%
+  pivot_wider(names_from = Site, values_from =speciescount) %>% 
+  replace(is.na(.), 0) %>% column_to_rownames(var="BeeSpecies")
+# Remove ecoregion column 
+KlamRare<-KlamRare[,!names(KlamRare)=="Ecoregion"]
+
+# Rarefaction
+str(KlamRare)
+out<-iNEXT(KlamRare, q=c(0), datatype="abundance", endpoint=150)
+
+# Plot
 K<-ggiNEXT(out, type=1) +theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Klamath Mountains")+ scale_colour_manual(values=c("deepskyblue4", "indianred4")) + scale_fill_manual(values=c("deepskyblue2", "indianred1")) +ylim(0,9)+geom_line(size = .3)
 ```
 
 ### Cascades
 ```{r, include=FALSE}
-NEXTSppC<-dfeco %>% filter(Ecoregion.1=="Cascades") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
-  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
-NEXTSppC
-str(NEXTSppC)
-out<-iNEXT(NEXTSppC, q=c(0), datatype="abundance", endpoint=150)
+# Filter to Cascades Sites and make rarefaction dataframe
+CascRare<-subset(EcoRares, Ecoregion == "Cascades") %>% unique() %>%
+  pivot_wider(names_from = Site, values_from =speciescount) %>% 
+  replace(is.na(.), 0) %>% column_to_rownames(var="BeeSpecies")
+# Remove ecoregion column 
+CascRare<-CascRare[,!names(CascRare)=="Ecoregion"]
+
+# Rarefaction
+str(CascRare)
+out<-iNEXT(CascRare, q=c(0), datatype="abundance", endpoint=150)
+
+# Plot
 C<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Cascades")+scale_colour_manual(values="navyblue") + scale_fill_manual(values="lightsteelblue2") +ylim(0,9)+geom_line(size = .3)
 ```
 
 ### CentralBasin
 ```{r}
-NEXTSppCB<-dfeco %>% filter(Ecoregion.1=="Central Basin") %>%  pivot_wider(names_from = Site_Grouping, values_from =SpeciesAbundance) %>% 
-  arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID") %>% select(!Ecoregion.1)
-NEXTSppCB
-str(NEXTSppCB)
-out<-iNEXT(NEXTSppCB, q=c(0), datatype="abundance", endpoint=150)
+# Filter to Central Basin Sites and make rarefaction dataframe
+CBasinRare<-subset(EcoRares, Ecoregion == "Central Basin") %>% unique() %>%
+  pivot_wider(names_from = Site, values_from =speciescount) %>% 
+  replace(is.na(.), 0) %>% column_to_rownames(var="BeeSpecies")
+# Remove ecoregion column 
+CBasinRare<-CBasinRare[,!names(CBasinRare)=="Ecoregion"]
+
+# Rarefaction
+str(CBasinRare)
+out<-iNEXT(CBasinRare, q=c(0), datatype="abundance", endpoint=150)
+
+# Plot
 CB<-ggiNEXT(out, type=1) + theme_bw(base_size=10)+guides(linetype=FALSE)+ theme(legend.position = "bottom",
  legend.title=element_blank(),text=element_text(size=8), plot.title=element_text(size=10), legend.key.size = unit(0.2, "cm"), legend.key.width = unit(0.05,"cm")) + ggtitle("Central Basin")+
   scale_colour_manual(values="orangered3") + scale_fill_manual(values="orange1") +ylim(0,9)+geom_line(size = .3)
 
+```
 
+# Plot all rarefactions together
+```{r}
 rarefactions<-ggarrange(SN, CS, CR, K, C, CB, 
             ncol=3, nrow=2)
 rarefactions
