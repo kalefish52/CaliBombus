@@ -346,98 +346,53 @@ How many sites and regions had which species??
 Includes the number of sites and ecoregions with which species 
 Treating all individuals collected equally (ie. males=females=queens)
 ```{r, echo=FALSE}
-#Remove sex.caste information and flooral association info
-head(dataDiv)
-TotalBreakdown <- dataDiv %>% select(!c(sex.caste, Latitude, Longitude, Elevation_ft, Floral.association..field.ID., X, coords.x1, coords.x2, 
-                                        count))
-#Number of ecoregions for each species
-EcoregionNum<-dataDiv %>% select(Ecoregion.1, Verified.Bee.species.ID) %>% unique() %>% group_by(Verified.Bee.species.ID) %>% mutate(count=1) %>% 
-  mutate(ecoregionnum=sum(count)) %>% select(Verified.Bee.species.ID, ecoregionnum) %>% unique()
-EcoregionNum
+# Sites with species
+SpeciesSite<-TotalDataInfo[,names(TotalDataInfo) %in% c("BeeSpecies",
+                                           "Site")] %>% unique()
+Table1Site<-aggregate(Site~BeeSpecies,
+          data=SpeciesSite,
+          FUN=length)
 
-#Number of sites for each species
-SiteNum<-dataDiv %>% select(Verified.Bee.species.ID, Site_Grouping) %>% unique() %>% group_by(Verified.Bee.species.ID) %>% mutate(count=1) %>% 
-  mutate(Sitenum=sum(count)) %>% select(Verified.Bee.species.ID, Sitenum) %>% unique()
-SiteNum
+# Ecoregions with species
+SpeciesEco<-TotalDataInfo[,names(TotalDataInfo) %in% c("BeeSpecies",
+                                           "Ecoregion")] %>% unique()
+Table1Eco<-aggregate(Ecoregion~BeeSpecies,
+          data=SpeciesEco,
+          FUN=length)
 
-#Total number of individuals for each species 
-Totalspecies<-dataDiv %>% select(Verified.Bee.species.ID, SpeciesAbundance, Site_Grouping) %>% unique() %>% group_by(Verified.Bee.species.ID) %>% mutate(totalspeciesabundance=sum(SpeciesAbundance)) %>% select(Verified.Bee.species.ID, totalspeciesabundance) %>% unique()
-Totalspecies
+# Relative abundance of each species total
+TotalInds<-aggregate(Elevation~BeeSpecies,
+          data=TotalDataInfo,
+          FUN=length) 
+names(TotalInds)[names(TotalInds)=='Elevation']<-"TotalNum"
 
-SummComm<-left_join(SiteNum, EcoregionNum, by="Verified.Bee.species.ID")
-head(SummComm)
-SummComm<-SummComm %>% rename(Number_of_Sites=Sitenum) %>% rename(Number_of_Ecoregions=ecoregionnum) 
-CommunityInfo<-left_join(SummComm, Totalspecies, by="Verified.Bee.species.ID")
-Finaldescript<-CommunityInfo %>% 
-  mutate(Percentage=(totalspeciesabundance/(sum(CommunityInfo$totalspeciesabundance))*100))
-Finaldescript
-write.csv(Finaldescript, file="./Tables/SpeciesperSiteEcoregion.csv")
+TotalInds$RA<-(TotalInds$TotalNum/nrow(TotalDataInfo)*100)
+
+# Combine dataframes for table 1
+Table1pre<-merge(Table1Eco, TotalInds, by="BeeSpecies")
+Table1<-merge(Table1pre, Table1Site, by="BeeSpecies")
+
+write.csv(Table1, file="./Tables/Table1.csv")
 ```
 
-## Ecoregion Richness/Abundance
-Use AllSpp for all diversity analyses 
-```{r, echo=FALSE}
-head(TotalBreakdown)
-##Ecoregion level numbers
-EcoregionData<-TotalBreakdown %>% unique() %>%select(Ecoregion.1, Verified.Bee.species.ID, SpeciesAbundance) %>% group_by(Ecoregion.1, Verified.Bee.species.ID) %>% mutate(EcoAbund=sum(SpeciesAbundance)) %>% select(!SpeciesAbundance) %>% unique()
-
-EcoregionData %>% arrange(Ecoregion.1)
-EcoRich<-EcoregionData %>% select(!EcoAbund) %>% group_by(Ecoregion.1) %>% mutate(count=1) %>% mutate(EcoRich=sum(count)) %>% select(!c(count, Verified.Bee.species.ID)) %>% unique()
-
-EcoSpp<-EcoregionData %>% pivot_wider(names_from=Verified.Bee.species.ID, values_from=EcoAbund)
-EcoSpp <- EcoSpp %>% replace(is.na(.), 0)
-
-TotalEco<-left_join(EcoregionData, EcoRich, by="Ecoregion.1")
-
-```
-
-# Transform data - diversity compatible
-```{r}
-AllSpp<-TotalBreakdown %>% unique() %>% pivot_wider(names_from = Verified.Bee.species.ID, values_from = SpeciesAbundance) %>% arrange(Site_Grouping)
-#Replace NAs with 0 
-AllSpp <- AllSpp %>% replace(is.na(.), 0)
-```
-
-
-# NMDS - see if species change based on Ecoregion
-## Based on species counts 
+# NMDS 
+## Species Counts
 We did not find any significant differences in community composition between ecoregions
 ```{r, width = 5, height = 4, dpi=600}
-# Change species names to abbreviations so graphs look nicer 
-names(AllSpp)
-#AllSpp<-AllSpp %>% rename(
-  #vos=vosnesenskii,
- # mel=melanopygus,
- # van=vandykei,
-  #fer=fervidus,
-  #cal=caliginosus,
-  #fld=flavidus,
-  #flf=flavifrons,
-  #ruf=rufocinctus,
-  #ins=insularis,
-  #bif=bifarius,
- # hun=huntii,
- # kir=kirbiellus,
- # syl=sylvicola,
- # cen=centralis,
- # mix=mixtus,
- # gri=griseocollis,
- # app=appositus
-#)
 
+head(DataSiteMatrix) # matrix site x species 
+head(SiteEnvs) # site characteristics 
 
-# Convert data into community matrix sith species as columns and communities (sites) as rows - remove all columns except for species columns 
-comm_matrix<-AllSpp[,7:ncol(AllSpp)] %>% as.matrix()
 set.seed(123456)
-NMDS=metaMDS(comm_matrix, k=2, distance="bray") 
+NMDS=metaMDS(DataSiteMatrix, k=2, distance="bray") 
 stressplot(NMDS)
 NMDS #Stress ok 
 
 #Get data scores and make new dataframe with site, ecoregion and collection date information
 data.scores<-as.data.frame(scores(NMDS))
-data.scores$date <- AllSpp$Date_comb
-data.scores$Site <-AllSpp$Site_Grouping
-data.scores$Ecoregion <-AllSpp$Ecoregion.1
+data.scores$date <- SiteEnvs$Date
+data.scores$Site <-SiteEnvs$Site
+data.scores$Ecoregion <-SiteEnvs$Ecoregion
 
 
 #Gets NMDS info for each behavior
@@ -445,7 +400,7 @@ species.scores<-as.data.frame(scores(NMDS, "species"))
 species.scores$species<-rownames(species.scores)
 
 ## Anosim - are communities different by ecoregion
-ano = anosim(comm_matrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
+ano = anosim(DataSiteMatrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
 ano
 #No significant differences between ecoregions in community composition
 
@@ -466,26 +421,24 @@ NMDSplot<-ggplot() +
 
 NMDSplot
 ggsave("./Figures/NMDS.png", width=8, height=7, dpi=600)
-
 ```
 
-# NMDS - presence/absence 
+## Presence/Absence
 ```{r}
 #Make presence/absence matrix 
-pamat<-AllSpp[,7:ncol(AllSpp)] 
-pamat[pamat>0]<-1
+DataSiteMatrix[DataSiteMatrix>0]<-1
 
 # Run NMDS with pamat
 set.seed(123456)
-NMDS=metaMDS(pamat, k=2, distance="bray") 
+NMDS=metaMDS(DataSiteMatrix, k=2, distance="bray") 
 stressplot(NMDS)
 NMDS #Stress ok 
 
 #Get data scores and make new dataframe with site, ecoregion and collection date information
 data.scores<-as.data.frame(scores(NMDS))
-data.scores$date <- AllSpp$Date_comb
-data.scores$Site <-AllSpp$Site_Grouping
-data.scores$Ecoregion <-AllSpp$Ecoregion.1
+data.scores$date <- SiteEnvs$Date
+data.scores$Site <-SiteEnvs$Site
+data.scores$Ecoregion <-SiteEnvs$Ecoregion
 
 
 #Gets NMDS info for each behavior
@@ -493,7 +446,7 @@ species.scores<-as.data.frame(scores(NMDS, "species"))
 species.scores$species<-rownames(species.scores)
 data.scores
 ## Anosim - are communities different by ecoregion
-ano = anosim(pamat, data.scores$Ecoregion, distance = "bray", permutations = 9999)
+ano = anosim(DataSiteMatrix, data.scores$Ecoregion, distance = "bray", permutations = 9999)
 ano
 
 boops<-data.scores %>% mutate(category=case_when(
@@ -506,45 +459,8 @@ boops<-data.scores %>% mutate(category=case_when(
 ))
 
 boops
-anotwo = anosim(pamat, boops$category, distance = "bray", permutations = 9999)
+anotwo = anosim(DataSiteMatrix, boops$category, distance = "bray", permutations = 9999)
 anotwo
-
-
-# Only look at mountain groups - are there differences within this group? Nope
-mounts<-AllSpp %>% filter(Ecoregion.1 %in% c("Klamath", 
-                           "Sierra Nevada",
-                           "Cascades"))
-
-mountsm<-mounts[,7:ncol(mounts)] 
-mountsm[mountsm>0]<-1
-
-mountsinfo<-boops %>% filter(category=="mountain")
-anomount = anosim(mountsm, mountsinfo$Ecoregion, distance="bray", permutations = 9999)
-anomount
-
-# Only look at coast groups - are there differences within this group? 
-coasts<-AllSpp %>% filter(Ecoregion.1 %in% c("Coastal Sage", 
-                           "Coast Range",
-                           "Central Basin"))
-
-coastsm<-coasts[,7:ncol(coasts)] 
-coastsm[coastsm>0]<-1
-
-coastsinfo<-boops %>% filter(category=="coast")
-anoco = anosim(coastsm, coastsinfo$Ecoregion, distance="bray", permutations = 9999)
-anoco
-
-## Test with anosim whether central basin is different from Coast Range and Coastal Sage -- its not different 
-test<-boops %>% 
-  filter(!Ecoregion %in% c("Klamath", 
-                           "Sierra Nevada", 
-                           "Cascades"))
-testmat<-AllSpp %>% filter(!Ecoregion.1 %in% c("Klamath", 
-                           "Sierra Nevada", 
-                           "Cascades"))
-
-smat<-testmat[,10:ncol(testmat)] 
-smat[smat>0]<-1
 
 ## Add hulls to distinguish statistically significant groups 
 # Hull data  
@@ -553,7 +469,6 @@ Coast <- boops[boops$category == "coast", ][chull(boops[boops$category == "coast
 
 # Combine all ecoregions
 hull.data <- rbind(Mountains, Coast)  
-
 
 NMDSplot2<-ggplot() +
   geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2, fill=category, group=category),alpha=0.30)+
@@ -564,26 +479,15 @@ NMDSplot2<-ggplot() +
   theme_bw()+scale_y_continuous(limits=c(-1.5,1.5)) 
 NMDSplot2
 
+```
+
+## Plots
+```{r}
 # Combine NMDS plots and save 
 nmds<-ggarrange(NMDSplot, NMDSplot2, 
             ncol=2, nrow=1, common.legend = TRUE, legend="right", labels=c("A", "B")) 
-nmds
 
 ggsave("./Figures/NMDSGraphs.png", width=9, height=5, dpi=600)
-```
-
-
-# Species Accumulation Curves in iNEXT for each Ecoregion 
-
-```{r}
-NextEco<-TotalEco %>% select(!EcoRich) %>% pivot_wider(names_from=Ecoregion.1, values_from=EcoAbund) %>% arrange(Verified.Bee.species.ID) %>% replace(is.na(.), 0) %>% column_to_rownames(var="Verified.Bee.species.ID")
-
-str(NextEco)
-#Species Richness, Hill Number 1
-out<-iNEXT(NextEco, q=c(0), datatype="abundance", endpoint=1000)
-ggiNEXT(out, type=1) + theme_bw(base_size=10) + scale_y_continuous( limits=c(0,12))
-out
-ggsave("./Figures/EcoregionRarefaction.png")
 ```
 
 ## Species Accumulation Curves in iNEXT for each site 
