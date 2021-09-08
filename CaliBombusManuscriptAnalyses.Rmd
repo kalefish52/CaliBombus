@@ -297,29 +297,41 @@ ggplot(flavidus, aes(x=Site, y=perccali)) + geom_bar(stat="identity") + ggtitle(
 castedatasite<-aggregate(SiteAbund~Site+sex.caste,
                      data=TotalDataInfo,
                      FUN=length)
+castetotalsite<-aggregate(SiteAbund~Site,
+                          data=castedatasite,
+                          FUN=sum)
+sitecastes<-merge(castedatasite, castetotalsite, by="Site")
+sitecastes$props<-(sitecastes$SiteAbund.x/sitecastes$SiteAbund.y)*100
+x<-subset(sitecastes, sex.caste=="worker")
+
+ggplot(x, aes(x=Site, y=props)) +
+    geom_bar(stat="identity") + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
+
 # Plot 
 castesite<-ggplot(castedatasite, aes(x=Site, y=SiteAbund, fill=sex.caste)) +
     geom_bar(stat="identity") + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
 castesite
+
 ggsave("./Figures/CasteSite.png")
 
+castedatasite$PercCastes<-castedatasite$SiteAbund
 # Calculate number of castes per ecoregion
 castedataeco<-aggregate(SiteAbund~Ecoregion+sex.caste,
                      data=TotalDataInfo,
                      FUN=length)
 names(castedataeco)[names(castedataeco)=='SiteAbund']<-"CasteEcoAbund"
 # Summarize castes per ecoregion to get total number of individuals per ecoregion 
-EcoNums<-aggregate(SiteAbund~Ecoregion,
+EcoNums<-aggregate(CasteEcoAbund~Ecoregion,
           data=castedataeco,
           FUN=sum)
-names(EcoNums)[names(EcoNums)=='SiteAbund']<-"TotalEcoAbund"
+names(EcoNums)[names(EcoNums)=='CasteEcoAbund']<-"TotalEcoAbund"
 
 # Combine EcoNums and castedataecos
 EcoInfo<-left_join(castedataeco, EcoNums, by="Ecoregion")
 
 # Add column for percentage of ecoregion per caste
 EcoInfo$CasteProp <- EcoInfo$CasteEcoAbund/EcoInfo$TotalEcoAbund
-
+subset(EcoInfo, Ecoregion=="Coastal Sage")
 # Graph proportions
 casteeco<-ggplot(EcoInfo, aes(x=Ecoregion, y=CasteEcoAbund, fill=sex.caste)) +
     geom_bar(stat="identity") + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=12)) + labs(y="# Individuals", fill="Caste")
