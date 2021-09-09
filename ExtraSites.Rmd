@@ -1,0 +1,16 @@
+---
+title: "Extra Sites"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+data<-read.csv("./Master_CaliBombus_bumble_inventory.csv")
+head(data)
+sw<-subset(data, Ecoregion=="SW")
+sw
+Nums<-aggregate(Bee.Unique.ID~Site_Name,
+          data=sw,
+          FUN=length)
+Nums
+```
