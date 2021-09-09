@@ -240,6 +240,7 @@ Abundance<-rowSums(DataSiteMatrix)
 
 # Combine with site data 
 Alpha<-cbind(SiteEnvs, Diversity=H, Richness=Richness, SiteAbund=Abundance)
+Alpha
 ```
 
 ## Alpha plots
